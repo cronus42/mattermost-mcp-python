@@ -13,7 +13,7 @@ including channel management, messaging, user operations, and monitoring.
 # from .reactions import add_reaction, remove_reaction
 # from .monitoring import health_check, get_server_stats
 
-__all__ = [
+__all__: list[str] = [
     # "BaseMCPTool",
     # "MCPToolRegistry", 
     # "mcp_tool",

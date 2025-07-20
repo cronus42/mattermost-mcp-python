@@ -18,9 +18,16 @@ Note: Live tests will create and clean up test data on the Mattermost instance.
 import os
 import pytest
 import asyncio
+import httpx
 from typing import Optional
 from unittest.mock import patch
-# Note: Using respx for mocking - HTTPXMock not needed
+# Note: Using respx for mocking
+
+# Mock HTTPXMock for skipped tests to avoid linter errors
+class HTTPXMock:
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+    def add_response(self, **kwargs): pass
 
 from mcp_mattermost.api.client import AsyncHTTPClient
 from mcp_mattermost.services.posts import PostsService
@@ -107,35 +114,23 @@ class TestMockIntegration:
             }
             
             # POST /posts (create)
-            httpx_mock.add_response(
-                method="POST",
-                url=f"{self.base_url}/posts",
-                json=create_response,
-                status_code=201
+            respx.post(f"{self.base_url}/posts").mock(
+                return_value=httpx.Response(201, json=create_response)
             )
             
             # GET /posts/{post_id} (get)
-            httpx_mock.add_response(
-                method="GET",
-                url=f"{self.base_url}/posts/post123",
-                json=create_response,
-                status_code=200
+            respx.get(f"{self.base_url}/posts/post123").mock(
+                return_value=httpx.Response(200, json=create_response)
             )
             
             # PUT /posts/{post_id} (update)
-            httpx_mock.add_response(
-                method="PUT",
-                url=f"{self.base_url}/posts/post123",
-                json=update_response,
-                status_code=200
+            respx.put(f"{self.base_url}/posts/post123").mock(
+                return_value=httpx.Response(200, json=update_response)
             )
             
             # DELETE /posts/{post_id} (delete)
-            httpx_mock.add_response(
-                method="DELETE",
-                url=f"{self.base_url}/posts/post123",
-                json={"status": "OK"},
-                status_code=200
+            respx.delete(f"{self.base_url}/posts/post123").mock(
+                return_value=httpx.Response(200, json={"status": "OK"})
             )
             
             async with AsyncHTTPClient(self.base_url, self.token) as client:

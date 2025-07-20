@@ -12,7 +12,7 @@ formatting, pagination, caching, and other common operations.
 # from .pagination import paginate_results, PaginationParams
 # from .cache import CacheManager, cached
 
-__all__ = [
+__all__: list[str] = [
     # "configure_logging",
     # "get_logger",
     # "validate_input", 

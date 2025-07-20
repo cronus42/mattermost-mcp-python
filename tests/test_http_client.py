@@ -14,6 +14,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import respx
 
+# Mock HTTPXMock for skipped tests to avoid linter errors
+class HTTPXMock:
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+    def add_response(self, **kwargs): pass
+    def add_callback(self, callback, **kwargs): pass
+
 from mcp_mattermost.api.client import AsyncHTTPClient, RateLimiter, create_http_client
 from mcp_mattermost.api.exceptions import (
     HTTPError,
@@ -425,7 +432,8 @@ class TestHTTPClientWithMocking:
     @pytest.mark.asyncio
     async def test_successful_post_request(self):
         """Test successful POST request with JSON payload."""
-        with HTTPXMock() as httpx_mock:
+        import respx
+        with respx.mock as httpx_mock:
             request_data = {"message": "Hello, World!", "channel_id": "channel123"}
             expected_response = {"id": "post123", "message": "Hello, World!"}
             

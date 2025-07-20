@@ -7,7 +7,7 @@ for different Mattermost domains like posts, channels, etc.
 
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
-# Note: Using respx for mocking - HTTPXMock not needed
+# Note: Using respx for mocking
 
 from mcp_mattermost.api.client import AsyncHTTPClient
 from mcp_mattermost.services.base import BaseService
