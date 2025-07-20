@@ -20,6 +20,7 @@ from .exceptions import (
     RateLimitError,
     create_http_exception,
 )
+from ..metrics import metrics
 
 logger = structlog.get_logger(__name__)
 
@@ -324,7 +325,7 @@ class AsyncHTTPClient:
         headers: Optional[Dict[str, str]] = None,
     ) -> Any:
         """
-        Make an HTTP request.
+        Make an HTTP request with comprehensive metrics collection and error handling.
         
         Args:
             method: HTTP method (GET, POST, PUT, DELETE, etc.)
@@ -337,6 +338,10 @@ class AsyncHTTPClient:
         Returns:
             Parsed response data
         """
+        start_time = time.time()
+        status_code = 200
+        error_type = None
+        
         # Use json parameter if provided, otherwise use data
         request_data = json if json is not None else data
         
@@ -348,35 +353,79 @@ class AsyncHTTPClient:
         serialized_data, data_headers = self._prepare_data(request_data)
         request_headers.update(data_headers)
         
-        # Log request
+        # Log request with structured context
         logger.info(
             "Making HTTP request",
             method=method,
             url=url,
+            endpoint=endpoint,
             has_data=serialized_data is not None,
             params=params,
+            request_id=id(self),  # Simple request correlation ID
         )
         
-        # Make request with retries
-        response = await self._make_request_with_retries(
-            method=method,
-            url=url,
-            headers=request_headers,
-            data=serialized_data,
-            params=params,
-        )
-        
-        # Handle response
-        result = await self._handle_response(response)
-        
-        logger.info(
-            "HTTP request completed",
-            method=method,
-            url=url,
-            status_code=response.status_code,
-        )
-        
-        return result
+        try:
+            # Make request with retries
+            response = await self._make_request_with_retries(
+                method=method,
+                url=url,
+                headers=request_headers,
+                data=serialized_data,
+                params=params,
+            )
+            
+            status_code = response.status_code
+            
+            # Handle response
+            result = await self._handle_response(response)
+            
+            logger.info(
+                "HTTP request completed successfully",
+                method=method,
+                url=url,
+                endpoint=endpoint,
+                status_code=status_code,
+                request_id=id(self),
+            )
+            
+            return result
+            
+        except Exception as e:
+            error_type = type(e).__name__
+            
+            # Extract status code from exception if available
+            if hasattr(e, 'status_code') and e.status_code:
+                status_code = e.status_code
+            else:
+                status_code = 500
+            
+            # Log error with comprehensive context
+            logger.error(
+                "HTTP request failed",
+                method=method,
+                url=url,
+                endpoint=endpoint,
+                error_type=error_type,
+                error=str(e),
+                status_code=status_code,
+                request_id=id(self),
+                exc_info=True,
+            )
+            
+            # Re-raise the original exception
+            raise
+            
+        finally:
+            # Always record metrics regardless of success/failure
+            duration = time.time() - start_time
+            
+            # Record comprehensive metrics
+            metrics.record_request_latency(method, endpoint, status_code, duration)
+            metrics.record_request_count(method, endpoint, status_code)
+            
+            # Record error metrics if applicable
+            if error_type:
+                metrics.record_error(error_type, endpoint)
     
     async def get(
         self,

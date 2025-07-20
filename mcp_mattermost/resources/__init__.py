@@ -1,20 +1,26 @@
 """
 MCP resource implementations for Mattermost data access.
 
-This module provides MCP resources that offer read-only access to Mattermost
-data such as channel history, user directories, and team information.
+This module provides MCP resources that offer both read-only access to Mattermost
+data and real-time streaming updates via WebSocket or polling mechanisms.
 """
 
-# Resource registry will be implemented here
-# from .base import BaseMCPResource, MCPResourceRegistry
-# from .channel_history import ChannelHistoryResource
-# from .user_directory import UserDirectoryResource
-# from .team_info import TeamInfoResource
+from .base import (
+    BaseMCPResource,
+    MCPResourceRegistry,
+    MCPResourceDefinition,
+    ResourceUpdate,
+    ResourceUpdateType,
+)
+from .channel_posts import NewChannelPostResource
+from .reactions import ReactionResource
 
 __all__ = [
-    # "BaseMCPResource",
-    # "MCPResourceRegistry",
-    # "ChannelHistoryResource",
-    # "UserDirectoryResource", 
-    # "TeamInfoResource",
+    "BaseMCPResource",
+    "MCPResourceRegistry", 
+    "MCPResourceDefinition",
+    "ResourceUpdate",
+    "ResourceUpdateType",
+    "NewChannelPostResource",
+    "ReactionResource",
 ]

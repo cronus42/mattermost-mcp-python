@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # Mattermost Database
+  postgres:
+    image: postgres:13-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: mmpassword
+      POSTGRES_USER: mmuser
+      POSTGRES_DB: mattermost
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mattermost
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mmuser", "-d", "mattermost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Mattermost Server
+  mattermost:
+    image: mattermost/mattermost-team-edition:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database Settings
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:mmpassword@postgres:5432/mattermost?sslmode=disable&connect_timeout=10
+      # File Storage
+      MM_FILESETTINGS_DRIVERNAME: local
+      # Plugin Settings
+      MM_PLUGINSETTINGS_ENABLE: true
+      MM_PLUGINSETTINGS_ENABLEUPLOADS: true
+      # Site URL - Change this to your domain
+      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+      # Enable Bot Accounts
+      MM_SERVICEACCOUNTS_ENABLEBOTACCOUNTS: true
+    ports:
+      - "8065:8065"
+    volumes:
+      - mattermost_config:/mattermost/config
+      - mattermost_data:/mattermost/data
+      - mattermost_logs:/mattermost/logs
+      - mattermost_plugins:/mattermost/plugins
+      - mattermost_client_plugins:/mattermost/client/plugins
+    networks:
+      - mattermost
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8065/api/v4/system/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # MCP Mattermost Server
+  mcp-mattermost:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mattermost:
+        condition: service_healthy
+    environment:
+      # Load from .env file
+      MATTERMOST_URL: ${MATTERMOST_URL:-http://mattermost:8065}
+      MATTERMOST_TOKEN: ${MATTERMOST_TOKEN}
+      MATTERMOST_TEAM_ID: ${MATTERMOST_TEAM_ID}
+      MCP_SERVER_HOST: 0.0.0.0
+      MCP_SERVER_PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    ports:
+      - "3000:3000"
+    networks:
+      - mattermost
+    volumes:
+      # Mount logs
+      - ./logs:/app/logs
+      # Mount config if needed
+      - ./.env:/app/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis (optional, for caching and rate limiting)
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - mattermost
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Nginx (optional, for load balancing and SSL termination)
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - mattermost
+      - mcp-mattermost
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/certs:/etc/nginx/certs:ro
+    networks:
+      - mattermost
+
+volumes:
+  postgres_data:
+  mattermost_config:
+  mattermost_data:
+  mattermost_logs:
+  mattermost_plugins:
+  mattermost_client_plugins:
+  redis_data:
+
+networks:
+  mattermost:
+    driver: bridge

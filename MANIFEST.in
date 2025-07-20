@@ -1,0 +1,20 @@
+include README.md
+include LICENSE
+include DESIGN.md
+include STREAMING_IMPLEMENTATION_SUMMARY.md
+include requirements.txt
+include pyproject.toml
+recursive-include mcp_mattermost *.py
+recursive-include mcp_mattermost *.typed
+recursive-include mcp_mattermost *.yaml
+recursive-include mcp_mattermost *.yml
+recursive-include mcp_mattermost *.md
+recursive-include docs *.md
+recursive-include examples *.py
+recursive-exclude tests *
+recursive-exclude .github *
+exclude .pre-commit-config.yaml
+exclude docker-compose.yml
+exclude Dockerfile
+global-exclude *.pyc
+global-exclude __pycache__

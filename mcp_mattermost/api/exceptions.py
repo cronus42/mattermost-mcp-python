@@ -5,8 +5,9 @@ This module defines custom exception classes used throughout the HTTP client
 for different types of errors that can occur during API interactions.
 """
 
-from typing import Optional
+from typing import Optional, Dict, Any
 import httpx
+import structlog
 
 
 class HTTPError(Exception):
@@ -15,14 +16,15 @@ class HTTPError(Exception):
     
     This is the base class for all HTTP client exceptions. It provides
     access to the HTTP status code and the original response object
-    for detailed error handling.
+    for detailed error handling, plus structured error context for logging.
     """
     
     def __init__(
         self, 
         message: str, 
         status_code: Optional[int] = None, 
-        response: Optional[httpx.Response] = None
+        response: Optional[httpx.Response] = None,
+        context: Optional[Dict[str, Any]] = None
     ):
         """
         Initialize HTTPError.
@@ -31,10 +33,46 @@ class HTTPError(Exception):
             message: Error message describing what went wrong
             status_code: HTTP status code from the response
             response: Original httpx.Response object
+            context: Additional error context for structured logging
         """
         super().__init__(message)
         self.status_code = status_code
         self.response = response
+        self.context = context or {}
+        
+        # Build comprehensive error context
+        self.error_context = {
+            "error_type": self.__class__.__name__,
+            "message": message,
+            "status_code": status_code,
+            **self.context
+        }
+        
+        if response is not None:
+            self.error_context.update({
+                "url": str(response.url),
+                "method": response.request.method if response.request else None,
+                "headers": dict(response.headers),
+                "response_size": len(response.content) if response.content else 0,
+            })
+        
+        # Log the error with structured context
+        logger = structlog.get_logger(__name__)
+        logger.error(
+            "HTTP error occurred",
+            **self.error_context
+        )
+    
+    def get_error_context(self) -> Dict[str, Any]:
+        """Get structured error context for logging and debugging."""
+        return self.error_context.copy()
+    
+    def __str__(self) -> str:
+        """String representation with context information."""
+        base_msg = super().__str__()
+        if self.status_code:
+            return f"{base_msg} (HTTP {self.status_code})"
+        return base_msg
 
 
 class AuthenticationError(HTTPError):

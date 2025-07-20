@@ -2,14 +2,17 @@
 Tests for the AsyncHTTPClient implementation.
 
 This module tests the HTTP client functionality including authentication,
-retry logic, rate limiting, and error handling.
+retry logic, rate limiting, and error handling using httpx-mock for
+comprehensive HTTP response mocking.
 """
 
 import pytest
 import asyncio
 import json
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
+import respx
 
 from mcp_mattermost.api.client import AsyncHTTPClient, RateLimiter, create_http_client
 from mcp_mattermost.api.exceptions import (
@@ -390,6 +393,333 @@ class TestErrorHandling:
                 
                 with pytest.raises(expected_exception):
                     await client.get("/test")
+
+
+class TestHTTPClientWithMocking:
+    """Test AsyncHTTPClient using httpx-mock for realistic HTTP mocking."""
+    
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.base_url = "https://mattermost.example.com/api/v4"
+        self.token = "test-token-123"
+    
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_successful_get_request(self):
+        """Test successful GET request with respx."""
+        # Mock the response
+        expected_response = {"id": "user123", "username": "testuser"}
+        respx.get(f"{self.base_url}/users/me").mock(
+            return_value=httpx.Response(
+                200,
+                json=expected_response,
+                headers={"Content-Type": "application/json"}
+            )
+        )
+        
+        async with AsyncHTTPClient(self.base_url, self.token) as client:
+            result = await client.get("/users/me")
+            assert result == expected_response
+    
+    @pytest.mark.asyncio
+    async def test_successful_post_request(self):
+        """Test successful POST request with JSON payload."""
+        with HTTPXMock() as httpx_mock:
+            request_data = {"message": "Hello, World!", "channel_id": "channel123"}
+            expected_response = {"id": "post123", "message": "Hello, World!"}
+            
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{self.base_url}/posts",
+                json=expected_response,
+                status_code=201,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                result = await client.post("/posts", json=request_data)
+                assert result == expected_response
+    
+    @pytest.mark.asyncio
+    async def test_authentication_error_401(self):
+        """Test handling of 401 authentication errors."""
+        with HTTPXMock() as httpx_mock:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/users/me",
+                json={"message": "Invalid or expired session, please login again."},
+                status_code=401,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                with pytest.raises(AuthenticationError) as exc_info:
+                    await client.get("/users/me")
+                
+                assert exc_info.value.status_code == 401
+                assert "Invalid or expired session" in str(exc_info.value)
+    
+    @pytest.mark.asyncio
+    async def test_rate_limit_error_429(self):
+        """Test handling of 429 rate limit errors."""
+        with HTTPXMock() as httpx_mock:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/users",
+                json={"message": "Rate limit exceeded"},
+                status_code=429,
+                headers={
+                    "Content-Type": "application/json",
+                    "Retry-After": "30"
+                }
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                with patch('asyncio.sleep') as mock_sleep:
+                    with pytest.raises(RateLimitError) as exc_info:
+                        await client.get("/users")
+                    
+                    assert exc_info.value.status_code == 429
+                    # Should have tried to sleep for retry-after period
+                    mock_sleep.assert_called_once_with(30.0)
+    
+    @pytest.mark.asyncio
+    async def test_server_error_500(self):
+        """Test handling of 500 server errors."""
+        with HTTPXMock() as httpx_mock:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/teams",
+                json={"message": "Internal server error"},
+                status_code=500,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                with pytest.raises(HTTPError) as exc_info:
+                    await client.get("/teams")
+                
+                assert exc_info.value.status_code == 500
+    
+    @pytest.mark.asyncio
+    async def test_not_found_error_404(self):
+        """Test handling of 404 not found errors."""
+        with HTTPXMock() as httpx_mock:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/users/nonexistent",
+                json={"message": "User not found"},
+                status_code=404,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                with pytest.raises(NotFoundError) as exc_info:
+                    await client.get("/users/nonexistent")
+                
+                assert exc_info.value.status_code == 404
+    
+    @pytest.mark.asyncio
+    async def test_retry_on_server_error(self):
+        """Test retry logic with httpx-mock."""
+        with HTTPXMock() as httpx_mock:
+            # First request fails with 503, second succeeds
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/ping",
+                json={"message": "Service unavailable"},
+                status_code=503,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/ping",
+                json={"status": "OK"},
+                status_code=200,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            client = AsyncHTTPClient(
+                self.base_url, 
+                self.token,
+                max_retries=2,
+                retry_backoff_factor=0.01  # Short delay for testing
+            )
+            
+            async with client:
+                with patch('asyncio.sleep') as mock_sleep:
+                    result = await client.get("/ping")
+                    
+                    assert result == {"status": "OK"}
+                    # Should have slept once between retries
+                    mock_sleep.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_request_with_query_parameters(self):
+        """Test request with query parameters."""
+        with HTTPXMock() as httpx_mock:
+            expected_response = [{"id": "user1"}, {"id": "user2"}]
+            
+            # httpx-mock will match the full URL including query params
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/users?page=0&per_page=10",
+                json=expected_response,
+                status_code=200
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                result = await client.get("/users", params={"page": 0, "per_page": 10})
+                assert result == expected_response
+    
+    @pytest.mark.asyncio
+    async def test_request_with_custom_headers(self):
+        """Test request with custom headers."""
+        with HTTPXMock() as httpx_mock:
+            expected_response = {"message": "Success"}
+            
+            def check_headers(request):
+                assert request.headers["X-Custom-Header"] == "custom-value"
+                assert "Bearer test-token-123" in request.headers["Authorization"]
+                return httpx.Response(200, json=expected_response)
+            
+            httpx_mock.add_callback(check_headers, url=f"{self.base_url}/test")
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                result = await client.get("/test", headers={"X-Custom-Header": "custom-value"})
+                assert result == expected_response
+    
+    @pytest.mark.asyncio
+    async def test_different_http_methods(self):
+        """Test all HTTP methods with httpx-mock."""
+        test_data = {"name": "Test Channel"}
+        expected_response = {"id": "channel123", "name": "Test Channel"}
+        
+        with HTTPXMock() as httpx_mock:
+            # GET
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/channels/channel123",
+                json=expected_response,
+                status_code=200
+            )
+            
+            # POST
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{self.base_url}/channels",
+                json=expected_response,
+                status_code=201
+            )
+            
+            # PUT
+            httpx_mock.add_response(
+                method="PUT",
+                url=f"{self.base_url}/channels/channel123",
+                json=expected_response,
+                status_code=200
+            )
+            
+            # PATCH
+            httpx_mock.add_response(
+                method="PATCH",
+                url=f"{self.base_url}/channels/channel123",
+                json=expected_response,
+                status_code=200
+            )
+            
+            # DELETE
+            httpx_mock.add_response(
+                method="DELETE",
+                url=f"{self.base_url}/channels/channel123",
+                json={"status": "OK"},
+                status_code=200
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                # Test GET
+                result = await client.get("/channels/channel123")
+                assert result == expected_response
+                
+                # Test POST
+                result = await client.post("/channels", json=test_data)
+                assert result == expected_response
+                
+                # Test PUT
+                result = await client.put("/channels/channel123", json=test_data)
+                assert result == expected_response
+                
+                # Test PATCH
+                result = await client.patch("/channels/channel123", json=test_data)
+                assert result == expected_response
+                
+                # Test DELETE
+                result = await client.delete("/channels/channel123")
+                assert result == {"status": "OK"}
+    
+    @pytest.mark.asyncio
+    async def test_json_parsing_error(self):
+        """Test handling of invalid JSON responses."""
+        with HTTPXMock() as httpx_mock:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/test",
+                content="invalid json content",
+                status_code=200,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                # Should return the text content when JSON parsing fails
+                result = await client.get("/test")
+                assert result == "invalid json content"
+    
+    @pytest.mark.asyncio
+    async def test_empty_response(self):
+        """Test handling of empty responses."""
+        with HTTPXMock() as httpx_mock:
+            httpx_mock.add_response(
+                method="DELETE",
+                url=f"{self.base_url}/posts/post123",
+                content="",
+                status_code=204
+            )
+            
+            async with AsyncHTTPClient(self.base_url, self.token) as client:
+                result = await client.delete("/posts/post123")
+                assert result == ""
+    
+    @pytest.mark.asyncio
+    async def test_metrics_collection(self):
+        """Test that metrics are collected during requests."""
+        with HTTPXMock() as httpx_mock:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{self.base_url}/test",
+                json={"success": True},
+                status_code=200
+            )
+            
+            with patch('mcp_mattermost.metrics.metrics.record_request_latency') as mock_latency:
+                with patch('mcp_mattermost.metrics.metrics.record_request_count') as mock_count:
+                    async with AsyncHTTPClient(self.base_url, self.token) as client:
+                        await client.get("/test")
+                        
+                        # Verify metrics were recorded
+                        mock_latency.assert_called_once()
+                        mock_count.assert_called_once()
+                        
+                        # Check the arguments passed to metrics
+                        latency_args = mock_latency.call_args[0]
+                        count_args = mock_count.call_args[0]
+                        
+                        assert latency_args[0] == "GET"  # method
+                        assert "/test" in latency_args[1]  # endpoint
+                        assert latency_args[2] == 200  # status_code
+                        assert isinstance(latency_args[3], float)  # duration
+                        
+                        assert count_args == ("GET", "/test", 200)
 
 
 if __name__ == "__main__":
