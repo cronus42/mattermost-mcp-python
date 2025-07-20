@@ -28,13 +28,12 @@ classifiers = [
 ]
 keywords = ["mcp", "mattermost", "model-context-protocol", "ai", "chat"]
 dependencies = [
-    "mcp>=1.0.0",
     "requests>=2.31.0",
     "httpx>=0.25.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
     "jsonschema>=4.19.0",
-    "asyncio-mqtt>=0.13.0",
+    "websockets>=11.0.0",
     "typing-extensions>=4.8.0",
     "structlog>=23.1.0",
 ]
@@ -56,17 +55,17 @@ test = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "responses>=0.23.0",
-    "httpx-mock>=0.10.0",
+    "respx>=0.20.0",
 ]
 metrics = [
     "prometheus-client>=0.19.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/mattermost-mcp-python"
-Documentation = "https://github.com/yourusername/mattermost-mcp-python#readme"
-Repository = "https://github.com/yourusername/mattermost-mcp-python"
-"Bug Reports" = "https://github.com/yourusername/mattermost-mcp-python/issues"
+Homepage = "https://github.com/cronus42/mattermost-mcp-python"
+Documentation = "https://github.com/cronus42/mattermost-mcp-python#readme"
+Repository = "https://github.com/cronus42/mattermost-mcp-python"
+"Bug Reports" = "https://github.com/cronus42/mattermost-mcp-python/issues"
 
 [project.scripts]
 mcp-mattermost = "mcp_mattermost.__main__:main"
