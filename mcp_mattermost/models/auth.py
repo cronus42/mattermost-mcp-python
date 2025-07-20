@@ -41,6 +41,7 @@ class Session(MattermostBase):
         if not self.expires_at:
             return False
         import time
+
         return self.expires_at < int(time.time() * 1000)
 
 

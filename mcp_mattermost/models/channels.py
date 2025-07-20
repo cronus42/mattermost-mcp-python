@@ -20,9 +20,7 @@ class ChannelNotifyProps(MattermostBase):
     )
     email: Optional[str] = Field(default=None, description="Email notification level")
     push: Optional[str] = Field(default=None, description="Push notification level")
-    mark_unread: Optional[str] = Field(
-        default=None, description="Mark unread setting"
-    )
+    mark_unread: Optional[str] = Field(default=None, description="Mark unread setting")
     ignore_channel_mentions: Optional[str] = Field(
         default=None, description="Whether to ignore channel mentions"
     )
@@ -33,7 +31,8 @@ class Channel(MattermostBase):
 
     team_id: Optional[str] = Field(default=None, description="ID of the team")
     type: Optional[str] = Field(
-        default=None, description="Channel type (O=public, P=private, D=direct, G=group)"
+        default=None,
+        description="Channel type (O=public, P=private, D=direct, G=group)",
     )
     display_name: Optional[str] = Field(
         default=None, description="Channel display name"

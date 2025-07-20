@@ -7,16 +7,16 @@ Mattermost API, including authentication, request handling, and error management
 
 from .client import AsyncHTTPClient, RateLimiter, create_http_client
 from .exceptions import (
-    HTTPError,
     AuthenticationError,
     AuthorizationError,
-    RateLimitError,
-    ValidationError,
-    NotFoundError,
     ConflictError,
+    ConnectionError,
+    HTTPError,
+    NotFoundError,
+    RateLimitError,
     ServerError,
     TimeoutError,
-    ConnectionError,
+    ValidationError,
     create_http_exception,
 )
 

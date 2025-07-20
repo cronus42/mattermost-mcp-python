@@ -5,27 +5,27 @@ This module provides high-level async methods for user-related operations
 mapped to REST endpoints, returning typed models.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from .base import BaseService
+from ..models.base import MattermostResponse
 from ..models.users import (
     User,
+    UserAuthData,
+    UserAutocomplete,
+    UserAutocompleteInChannel,
+    UserAutocompleteInTeam,
     UserCreate,
+    UserLogin,
     UserPatch,
     UsersStats,
-    UserAutocomplete,
-    UserAutocompleteInTeam,
-    UserAutocompleteInChannel,
-    UserLogin,
-    UserAuthData,
 )
-from ..models.base import MattermostResponse
+from .base import BaseService
 
 
 class UsersService(BaseService):
     """
     Service for user-related operations.
-    
+
     Provides high-level async methods for:
     - Creating, updating, and deleting users
     - Getting user information and lists
@@ -33,105 +33,101 @@ class UsersService(BaseService):
     - User search and autocomplete
     - User statistics
     """
-    
+
     async def create_user(self, user_data: UserCreate) -> User:
         """
         Create a new user.
-        
+
         Args:
             user_data: User creation data
-            
+
         Returns:
             Created user
         """
         return await self._post(
-            "users",
-            User,
-            data=user_data.model_dump(exclude_none=True)
+            "users", User, data=user_data.model_dump(exclude_none=True)
         )
-    
+
     async def get_user(self, user_id: str) -> User:
         """
         Get a user by ID.
-        
+
         Args:
             user_id: User ID
-            
+
         Returns:
             User information
         """
         return await self._get(f"users/{user_id}", User)
-    
+
     async def get_user_by_username(self, username: str) -> User:
         """
         Get a user by username.
-        
+
         Args:
             username: Username
-            
+
         Returns:
             User information
         """
         return await self._get(f"users/username/{username}", User)
-    
+
     async def get_user_by_email(self, email: str) -> User:
         """
         Get a user by email.
-        
+
         Args:
             email: Email address
-            
+
         Returns:
             User information
         """
         return await self._get(f"users/email/{email}", User)
-    
+
     async def update_user(self, user_id: str, user_patch: UserPatch) -> User:
         """
         Update a user's information.
-        
+
         Args:
             user_id: User ID
             user_patch: User update data
-            
+
         Returns:
             Updated user
         """
         return await self._put(
-            f"users/{user_id}",
-            User,
-            data=user_patch.model_dump(exclude_none=True)
+            f"users/{user_id}", User, data=user_patch.model_dump(exclude_none=True)
         )
-    
+
     async def patch_user(self, user_id: str, user_patch: UserPatch) -> User:
         """
         Partially update a user's information.
-        
+
         Args:
             user_id: User ID
             user_patch: User patch data
-            
+
         Returns:
             Updated user
         """
         return await self._patch(
             f"users/{user_id}/patch",
             User,
-            data=user_patch.model_dump(exclude_none=True)
+            data=user_patch.model_dump(exclude_none=True),
         )
-    
+
     async def delete_user(self, user_id: str) -> MattermostResponse:
         """
         Delete a user (deactivate).
-        
+
         Args:
             user_id: User ID
-            
+
         Returns:
             Response indicating success
         """
         return await self._delete(f"users/{user_id}", MattermostResponse)
-    
+
     async def get_users(
         self,
         page: int = 0,
@@ -152,7 +148,7 @@ class UsersService(BaseService):
     ) -> List[User]:
         """
         Get a list of users.
-        
+
         Args:
             page: Page number (0-based)
             per_page: Number of users per page
@@ -169,7 +165,7 @@ class UsersService(BaseService):
             roles: Filter by system roles
             channel_roles: Filter by channel roles
             team_roles: Filter by team roles
-            
+
         Returns:
             List of users
         """
@@ -186,45 +182,37 @@ class UsersService(BaseService):
             inactive=inactive,
             role=role,
             sort=sort,
-            roles=','.join(roles) if roles else None,
-            channel_roles=','.join(channel_roles) if channel_roles else None,
-            team_roles=','.join(team_roles) if team_roles else None,
+            roles=",".join(roles) if roles else None,
+            channel_roles=",".join(channel_roles) if channel_roles else None,
+            team_roles=",".join(team_roles) if team_roles else None,
         )
-        
+
         return await self._get_list("users", User, params=params)
-    
+
     async def get_users_by_ids(self, user_ids: List[str]) -> List[User]:
         """
         Get users by a list of user IDs.
-        
+
         Args:
             user_ids: List of user IDs
-            
+
         Returns:
             List of users
         """
-        return await self._post(
-            "users/ids",
-            List[User],
-            data=user_ids
-        )
-    
+        return await self._post("users/ids", List[User], data=user_ids)
+
     async def get_users_by_usernames(self, usernames: List[str]) -> List[User]:
         """
         Get users by a list of usernames.
-        
+
         Args:
             usernames: List of usernames
-            
+
         Returns:
             List of users
         """
-        return await self._post(
-            "users/usernames",
-            List[User],
-            data=usernames
-        )
-    
+        return await self._post("users/usernames", List[User], data=usernames)
+
     async def search_users(
         self,
         term: str,
@@ -239,7 +227,7 @@ class UsersService(BaseService):
     ) -> List[User]:
         """
         Search for users.
-        
+
         Args:
             term: Search term
             team_id: Filter users in specific team
@@ -250,7 +238,7 @@ class UsersService(BaseService):
             allow_inactive: Include inactive users
             without_team: Filter users without team
             limit: Maximum number of results
-            
+
         Returns:
             List of matching users
         """
@@ -265,9 +253,9 @@ class UsersService(BaseService):
             without_team=without_team,
             limit=limit,
         )
-        
+
         return await self._post("users/search", List[User], data=data)
-    
+
     async def autocomplete_users(
         self,
         name: str,
@@ -277,13 +265,13 @@ class UsersService(BaseService):
     ) -> UserAutocomplete:
         """
         Autocomplete users by name.
-        
+
         Args:
             name: Partial name to search
             team_id: Team ID context
             channel_id: Channel ID context
             limit: Maximum number of results
-            
+
         Returns:
             Autocomplete results
         """
@@ -293,65 +281,65 @@ class UsersService(BaseService):
             channel_id=channel_id,
             limit=limit,
         )
-        
+
         return await self._get("users/autocomplete", UserAutocomplete, params=params)
-    
+
     async def get_user_stats(self) -> UsersStats:
         """
         Get user statistics.
-        
+
         Returns:
             User statistics
         """
         return await self._get("users/stats", UsersStats)
-    
+
     async def get_me(self) -> User:
         """
         Get the current user.
-        
+
         Returns:
             Current user information
         """
         return await self._get("users/me", User)
-    
+
     async def update_me(self, user_patch: UserPatch) -> User:
         """
         Update the current user.
-        
+
         Args:
             user_patch: User update data
-            
+
         Returns:
             Updated user
         """
         return await self._put(
-            "users/me",
-            User,
-            data=user_patch.model_dump(exclude_none=True)
+            "users/me", User, data=user_patch.model_dump(exclude_none=True)
         )
-    
+
     async def get_user_image(self, user_id: str) -> bytes:
         """
         Get a user's profile image.
-        
+
         Args:
             user_id: User ID
-            
+
         Returns:
             Profile image data
         """
         # Note: This returns raw image data, not a model
         response = await self.client.get(f"users/{user_id}/image")
         return response
-    
-    async def set_user_image(self, user_id: str, image_data: bytes) -> MattermostResponse:
+
+    async def set_user_image(
+        self, user_id: str, image_data: bytes
+    ) -> MattermostResponse:
         """
         Set a user's profile image.
-        
+
         Args:
             user_id: User ID
             image_data: Image file data
-            
+
         Returns:
             Response indicating success
         """
@@ -360,9 +348,9 @@ class UsersService(BaseService):
             f"users/{user_id}/image",
             MattermostResponse,
             data=image_data,
-            headers=headers
+            headers=headers,
         )
-    
+
     async def update_user_password(
         self,
         user_id: str,
@@ -371,12 +359,12 @@ class UsersService(BaseService):
     ) -> MattermostResponse:
         """
         Update a user's password.
-        
+
         Args:
             user_id: User ID
             current_password: Current password
             new_password: New password
-            
+
         Returns:
             Response indicating success
         """
@@ -384,44 +372,38 @@ class UsersService(BaseService):
             "current_password": current_password,
             "new_password": new_password,
         }
-        
+
         return await self._put(
-            f"users/{user_id}/password",
-            MattermostResponse,
-            data=data
+            f"users/{user_id}/password", MattermostResponse, data=data
         )
-    
+
     async def send_password_reset_email(self, email: str) -> MattermostResponse:
         """
         Send a password reset email to a user.
-        
+
         Args:
             email: User's email address
-            
+
         Returns:
             Response indicating success
         """
         data = {"email": email}
         return await self._post(
-            "users/password/reset/send",
-            MattermostResponse,
-            data=data
+            "users/password/reset/send", MattermostResponse, data=data
         )
-    
-    async def activate_user(self, user_id: str, active: bool = True) -> MattermostResponse:
+
+    async def activate_user(
+        self, user_id: str, active: bool = True
+    ) -> MattermostResponse:
         """
         Activate or deactivate a user.
-        
+
         Args:
             user_id: User ID
             active: Whether to activate (True) or deactivate (False)
-            
+
         Returns:
             Response indicating success
         """
         data = {"active": active}
-        return await self._put(
-            f"users/{user_id}/active",
-            MattermostResponse,
-            data=data
-        )
+        return await self._put(f"users/{user_id}/active", MattermostResponse, data=data)

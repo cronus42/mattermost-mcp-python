@@ -129,9 +129,7 @@ class PostList(MattermostResponse):
     posts: Optional[Dict[str, Post]] = Field(
         default=None, description="Posts mapped by ID"
     )
-    next_post_id: Optional[str] = Field(
-        default=None, description="ID of the next post"
-    )
+    next_post_id: Optional[str] = Field(default=None, description="ID of the next post")
     prev_post_id: Optional[str] = Field(
         default=None, description="ID of the previous post"
     )
@@ -205,12 +203,8 @@ class FileInfo(MattermostBase):
     extension: Optional[str] = Field(default=None, description="File extension")
     size: Optional[int] = Field(default=None, description="File size in bytes")
     mime_type: Optional[str] = Field(default=None, description="MIME type")
-    width: Optional[int] = Field(
-        default=None, description="Image width (for images)"
-    )
-    height: Optional[int] = Field(
-        default=None, description="Image height (for images)"
-    )
+    width: Optional[int] = Field(default=None, description="Image width (for images)")
+    height: Optional[int] = Field(default=None, description="Image height (for images)")
     has_preview_image: Optional[bool] = Field(
         default=None, description="Whether a preview image exists"
     )

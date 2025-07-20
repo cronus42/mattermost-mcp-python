@@ -5,14 +5,6 @@ This module contains Pydantic models for all Mattermost data structures
 including channels, posts, users, reactions, and configuration.
 """
 
-# Base models and common types
-from .base import (
-    ErrorResponse,
-    MattermostBase,
-    MattermostResponse,
-    StatusOK,
-)
-
 # Authentication and session models
 from .auth import (
     AccessToken,
@@ -37,6 +29,14 @@ from .auth import (
     SamlCertificateRequest,
     SamlRequest,
     Session,
+)
+
+# Base models and common types
+from .base import (
+    ErrorResponse,
+    MattermostBase,
+    MattermostResponse,
+    StatusOK,
 )
 
 # Channel models

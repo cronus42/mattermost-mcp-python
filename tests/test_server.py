@@ -3,6 +3,7 @@ Tests for the MattermostMCPServer class.
 """
 
 import pytest
+
 from mcp_mattermost.server import MattermostMCPServer
 
 
@@ -16,7 +17,7 @@ class TestMattermostMCPServer:
             mattermost_token="test-token",
             team_id="test-team-id",
         )
-        
+
         assert server.mattermost_url == "https://example.com"
         assert server.mattermost_token == "test-token"
         assert server.team_id == "test-team-id"
@@ -27,7 +28,7 @@ class TestMattermostMCPServer:
             mattermost_url="https://example.com/",
             mattermost_token="test-token",
         )
-        
+
         assert server.mattermost_url == "https://example.com"
 
     def test_get_tools_empty(self):
@@ -36,7 +37,7 @@ class TestMattermostMCPServer:
             mattermost_url="https://example.com",
             mattermost_token="test-token",
         )
-        
+
         tools = server.get_tools()
         assert tools == []
 
@@ -46,7 +47,7 @@ class TestMattermostMCPServer:
             mattermost_url="https://example.com",
             mattermost_token="test-token",
         )
-        
+
         resources = server.get_resources()
         assert resources == []
 
@@ -57,7 +58,7 @@ class TestMattermostMCPServer:
             mattermost_url="https://example.com",
             mattermost_token="test-token",
         )
-        
+
         # These should not raise exceptions
         await server.start()
         await server.stop()

@@ -107,9 +107,7 @@ class Command(MattermostBase):
     trigger: Optional[str] = Field(
         default=None, description="String that triggers the command"
     )
-    method: Optional[str] = Field(
-        default=None, description="HTTP method (GET or POST)"
-    )
+    method: Optional[str] = Field(default=None, description="HTTP method (GET or POST)")
     username: Optional[str] = Field(
         default=None, description="Username for the response post"
     )
@@ -167,9 +165,7 @@ class CommandResponse(MattermostResponse):
     Text: Optional[str] = Field(default=None, description="Response text")
     Username: Optional[str] = Field(default=None, description="Response username")
     IconURL: Optional[str] = Field(default=None, description="Response icon URL")
-    GotoLocation: Optional[str] = Field(
-        default=None, description="URL to navigate to"
-    )
+    GotoLocation: Optional[str] = Field(default=None, description="URL to navigate to")
     Attachments: Optional[List[SlackAttachment]] = Field(
         default=None, description="Message attachments"
     )
@@ -202,9 +198,7 @@ class BotPatch(MattermostBase):
     display_name: Optional[str] = Field(
         default=None, description="Updated display name"
     )
-    description: Optional[str] = Field(
-        default=None, description="Updated description"
-    )
+    description: Optional[str] = Field(default=None, description="Updated description")
 
 
 class WebhookPayload(MattermostBase):

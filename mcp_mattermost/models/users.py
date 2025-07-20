@@ -161,9 +161,7 @@ class UserAutocomplete(MattermostResponse):
 class UserAutocompleteInTeam(MattermostResponse):
     """User autocomplete within a team."""
 
-    in_team: Optional[List[User]] = Field(
-        default=None, description="Users in the team"
-    )
+    in_team: Optional[List[User]] = Field(default=None, description="Users in the team")
 
 
 class UserAutocompleteInChannel(MattermostResponse):

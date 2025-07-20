@@ -15,7 +15,7 @@ formatting, pagination, caching, and other common operations.
 __all__: list[str] = [
     # "configure_logging",
     # "get_logger",
-    # "validate_input", 
+    # "validate_input",
     # "sanitize_text",
     # "format_message",
     # "render_template",

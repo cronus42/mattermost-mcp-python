@@ -7,8 +7,8 @@ data and real-time streaming updates via WebSocket or polling mechanisms.
 
 from .base import (
     BaseMCPResource,
-    MCPResourceRegistry,
     MCPResourceDefinition,
+    MCPResourceRegistry,
     ResourceUpdate,
     ResourceUpdateType,
 )
@@ -17,7 +17,7 @@ from .reactions import ReactionResource
 
 __all__ = [
     "BaseMCPResource",
-    "MCPResourceRegistry", 
+    "MCPResourceRegistry",
     "MCPResourceDefinition",
     "ResourceUpdate",
     "ResourceUpdateType",

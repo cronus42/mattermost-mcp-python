@@ -16,10 +16,11 @@ from .server import MattermostMCPServer
 # Load environment variables
 load_dotenv()
 
+
 def configure_logging(log_format: str = "console", log_level: str = "INFO") -> None:
     """
     Configure structured logging with the specified format and level.
-    
+
     Args:
         log_format: Logging format ("console" or "json")
         log_level: Logging level
@@ -34,22 +35,23 @@ def configure_logging(log_format: str = "console", log_level: str = "INFO") -> N
         structlog.processors.format_exc_info,
         structlog.processors.UnicodeDecoder(),
     ]
-    
+
     # Add appropriate renderer based on format
     if log_format == "json":
         processors.append(structlog.processors.JSONRenderer())
     else:
         processors.append(structlog.dev.ConsoleRenderer())
-    
+
     structlog.configure(
         processors=processors,
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
-    
+
     # Configure standard library logger level
     import logging
+
     logging.basicConfig(level=getattr(logging, log_level.upper()))
 
 
@@ -60,7 +62,7 @@ class ServerConfig:
     """
     Configuration class for the Mattermost MCP server.
     """
-    
+
     def __init__(
         self,
         mattermost_url: str,
@@ -95,7 +97,7 @@ class ServerConfig:
 def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments.
-    
+
     Returns:
         Parsed arguments namespace
     """
@@ -103,7 +105,7 @@ def parse_args() -> argparse.Namespace:
         description="Mattermost MCP Server",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    
+
     # Mattermost configuration
     parser.add_argument(
         "--mattermost-url",
@@ -129,7 +131,7 @@ def parse_args() -> argparse.Namespace:
         "--default-channel",
         help="Default channel ID (overrides DEFAULT_CHANNEL env var)",
     )
-    
+
     # Server configuration
     parser.add_argument(
         "--host",
@@ -142,7 +144,7 @@ def parse_args() -> argparse.Namespace:
         default=8000,
         help="Server port (overrides MCP_SERVER_PORT env var)",
     )
-    
+
     # Logging configuration
     parser.add_argument(
         "--log-level",
@@ -154,7 +156,7 @@ def parse_args() -> argparse.Namespace:
         choices=["console", "json"],
         help="Logging format (overrides LOG_FORMAT env var)",
     )
-    
+
     # Feature configuration
     parser.add_argument(
         "--no-streaming",
@@ -172,7 +174,7 @@ def parse_args() -> argparse.Namespace:
         default=30.0,
         help="Polling interval in seconds",
     )
-    
+
     return parser.parse_args()
 
 
@@ -180,13 +182,13 @@ def get_config_from_env_and_args(args: argparse.Namespace) -> ServerConfig:
     """
     Get configuration from environment variables and command-line arguments.
     Command-line arguments take precedence over environment variables.
-    
+
     Args:
         args: Parsed command-line arguments
-        
+
     Returns:
         ServerConfig instance with resolved configuration
-        
+
     Raises:
         ValueError: If required configuration is missing
     """
@@ -197,24 +199,28 @@ def get_config_from_env_and_args(args: argparse.Namespace) -> ServerConfig:
     webhook_secret = args.webhook_secret or os.getenv("WEBHOOK_SECRET")
     ws_url = args.ws_url or os.getenv("WS_URL")
     default_channel = args.default_channel or os.getenv("DEFAULT_CHANNEL")
-    
+
     host = args.host or os.getenv("MCP_SERVER_HOST", "localhost")
     port = args.port or int(os.getenv("MCP_SERVER_PORT", "8000"))
-    
+
     log_level = args.log_level or os.getenv("LOG_LEVEL", "INFO")
     log_format = args.log_format or os.getenv("LOG_FORMAT", "console")
-    
+
     enable_streaming = not args.no_streaming
     enable_polling = not args.no_polling
     polling_interval = args.polling_interval
-    
+
     # Validate required configuration
     if not mattermost_url:
-        raise ValueError("MATTERMOST_URL is required (set via env var or --mattermost-url)")
-    
+        raise ValueError(
+            "MATTERMOST_URL is required (set via env var or --mattermost-url)"
+        )
+
     if not mattermost_token:
-        raise ValueError("MATTERMOST_TOKEN is required (set via env var or --mattermost-token)")
-    
+        raise ValueError(
+            "MATTERMOST_TOKEN is required (set via env var or --mattermost-token)"
+        )
+
     return ServerConfig(
         mattermost_url=mattermost_url,
         mattermost_token=mattermost_token,
@@ -237,13 +243,13 @@ async def main() -> None:
     try:
         # Parse command-line arguments
         args = parse_args()
-        
+
         # Get configuration from environment and CLI args
         config = get_config_from_env_and_args(args)
-        
+
         # Configure logging
         configure_logging(config.log_format, config.log_level)
-        
+
         logger.info(
             "Starting Mattermost MCP server with configuration",
             mattermost_url=config.mattermost_url,
@@ -257,7 +263,7 @@ async def main() -> None:
             polling_enabled=config.enable_polling,
             polling_interval=config.polling_interval,
         )
-        
+
         # Create and start the server
         server = MattermostMCPServer(
             mattermost_url=config.mattermost_url,
@@ -271,10 +277,10 @@ async def main() -> None:
             ws_url=config.ws_url,
             default_channel=config.default_channel,
         )
-        
+
         logger.info("Starting Mattermost MCP server")
         await server.start()
-        
+
         # Keep the server running
         try:
             while True:
@@ -283,7 +289,7 @@ async def main() -> None:
             logger.info("Received shutdown signal")
         finally:
             await server.stop()
-            
+
     except Exception as e:
         logger.error("Failed to start server", error=str(e), exc_info=True)
         sys.exit(1)

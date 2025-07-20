@@ -12,6 +12,7 @@ __email__ = "your.email@example.com"
 # Optional imports to avoid dependency issues when just using models
 try:
     from .server import MattermostMCPServer
+
     __all__ = ["MattermostMCPServer"]
 except ImportError:
     # If server dependencies are not available, just export the models

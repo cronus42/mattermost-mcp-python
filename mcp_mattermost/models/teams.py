@@ -15,13 +15,13 @@ from .base import MattermostBase, MattermostResponse
 class Team(MattermostBase):
     """Mattermost team model."""
 
-    display_name: Optional[str] = Field(
-        default=None, description="Team's display name"
-    )
+    display_name: Optional[str] = Field(default=None, description="Team's display name")
     name: Optional[str] = Field(default=None, description="Team's unique name")
     description: Optional[str] = Field(default=None, description="Team description")
     email: Optional[str] = Field(default=None, description="Team email")
-    type: Optional[str] = Field(default=None, description="Team type (O=open, I=invite)")
+    type: Optional[str] = Field(
+        default=None, description="Team type (O=open, I=invite)"
+    )
     allowed_domains: Optional[str] = Field(
         default=None, description="Comma-separated list of allowed domains"
     )
@@ -70,9 +70,7 @@ class TeamStats(MattermostResponse):
 class TeamExists(MattermostResponse):
     """Team existence check response."""
 
-    exists: Optional[bool] = Field(
-        default=None, description="Whether the team exists"
-    )
+    exists: Optional[bool] = Field(default=None, description="Whether the team exists")
 
 
 class TeamMember(MattermostBase):

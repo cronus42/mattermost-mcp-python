@@ -5,15 +5,15 @@ This package contains high-level service classes that provide
 async methods mapped to REST endpoints and return typed models.
 """
 
-from .users import UsersService
-from .teams import TeamsService
 from .channels import ChannelsService
-from .posts import PostsService
 from .files import FilesService
+from .posts import PostsService
+from .teams import TeamsService
+from .users import UsersService
 
 __all__ = [
     "UsersService",
-    "TeamsService", 
+    "TeamsService",
     "ChannelsService",
     "PostsService",
     "FilesService",
