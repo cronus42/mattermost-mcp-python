@@ -55,7 +55,11 @@ class HTTPError(Exception):
                     "url": str(response.url),
                     "method": response.request.method if response.request else None,
                     "headers": dict(response.headers),
-                    "response_size": len(response.content) if response.content else 0,
+                    "response_size": (
+                        len(response.content)
+                        if response.content and hasattr(response.content, "__len__")
+                        else 0
+                    ),
                 }
             )
 
