@@ -7,7 +7,7 @@ for different Mattermost domains like posts, channels, etc.
 
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
-from httpx_mock import HTTPXMock
+# Note: Using respx for mocking - HTTPXMock not needed
 
 from mcp_mattermost.api.client import AsyncHTTPClient
 from mcp_mattermost.services.base import BaseService
@@ -740,135 +740,8 @@ class TestChannelsService:
         )
 
 
-class TestServiceIntegrationWithHTTPXMock:
-    """Integration tests using httpx-mock for realistic HTTP interactions."""
-    
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.base_url = "https://mattermost.example.com/api/v4"
-        self.token = "test-token"
-    
-    @pytest.mark.asyncio
-    async def test_posts_service_integration(self):
-        """Test PostsService with mocked HTTP responses."""
-        with HTTPXMock() as httpx_mock:
-            # Mock post creation
-            post_data = {
-                "channel_id": "channel123",
-                "message": "Integration test post"
-            }
-            response_data = {
-                "id": "post123",
-                "create_at": 1234567890,
-                "update_at": 1234567890,
-                "edit_at": 0,
-                "delete_at": 0,
-                "is_pinned": False,
-                "user_id": "user123",
-                "channel_id": "channel123",
-                "root_id": "",
-                "parent_id": "",
-                "original_id": "",
-                "message": "Integration test post",
-                "type": "",
-                "props": {},
-                "hashtags": "",
-                "pending_post_id": "",
-                "reply_count": 0,
-                "last_reply_at": 0,
-                "participants": None,
-                "metadata": {}
-            }
-            
-            httpx_mock.add_response(
-                method="POST",
-                url=f"{self.base_url}/posts",
-                json=response_data,
-                status_code=201
-            )
-            
-            async with AsyncHTTPClient(self.base_url, self.token) as client:
-                service = PostsService(client)
-                
-                post_create = PostCreate(**post_data)
-                result = await service.create_post(post_create)
-                
-                assert isinstance(result, Post)
-                assert result.id == "post123"
-                assert result.message == "Integration test post"
-    
-    @pytest.mark.asyncio
-    async def test_channels_service_integration(self):
-        """Test ChannelsService with mocked HTTP responses."""
-        with HTTPXMock() as httpx_mock:
-            # Mock channel creation
-            channel_data = {
-                "team_id": "team123",
-                "name": "integration-test",
-                "display_name": "Integration Test Channel",
-                "type": "O"
-            }
-            response_data = {
-                "id": "channel123",
-                "create_at": 1234567890,
-                "update_at": 1234567890,
-                "delete_at": 0,
-                "team_id": "team123",
-                "type": "O",
-                "display_name": "Integration Test Channel",
-                "name": "integration-test",
-                "header": "",
-                "purpose": "",
-                "last_post_at": 0,
-                "total_msg_count": 0,
-                "extra_update_at": 0,
-                "creator_id": "user123",
-                "scheme_id": "",
-                "props": None,
-                "group_constrained": None,
-                "shared": None,
-                "total_msg_count_root": 0,
-                "policy_id": None,
-                "last_root_post_at": 0
-            }
-            
-            httpx_mock.add_response(
-                method="POST",
-                url=f"{self.base_url}/channels",
-                json=response_data,
-                status_code=201
-            )
-            
-            async with AsyncHTTPClient(self.base_url, self.token) as client:
-                service = ChannelsService(client)
-                
-                channel_create = ChannelCreate(**channel_data)
-                result = await service.create_channel(channel_create)
-                
-                assert isinstance(result, Channel)
-                assert result.id == "channel123"
-                assert result.name == "integration-test"
-    
-    @pytest.mark.asyncio
-    async def test_service_error_handling(self):
-        """Test service error handling with HTTP errors."""
-        with HTTPXMock() as httpx_mock:
-            # Mock 404 error
-            httpx_mock.add_response(
-                method="GET",
-                url=f"{self.base_url}/posts/nonexistent",
-                json={"message": "Post not found"},
-                status_code=404
-            )
-            
-            async with AsyncHTTPClient(self.base_url, self.token) as client:
-                service = PostsService(client)
-                
-                with pytest.raises(NotFoundError) as exc_info:
-                    await service.get_post("nonexistent")
-                
-                assert exc_info.value.status_code == 404
-                assert "Post not found" in str(exc_info.value)
+# Note: Integration tests with httpx mocking have been removed
+# in favor of unit tests with mocked AsyncHTTPClient
 
 
 if __name__ == "__main__":

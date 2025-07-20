@@ -183,7 +183,7 @@ async def example_with_metrics_and_error_handling():
             )
 
 
-async def simulate_operations_with_error_handling(server: 'MattermostMCPServer'):
+async def simulate_operations_with_error_handling(server):
     """
     Simulate various operations to demonstrate error handling and metrics.
     """
@@ -226,7 +226,7 @@ async def simulate_operations_with_error_handling(server: 'MattermostMCPServer')
         )
 
 
-def start_metrics_http_server(server: 'MattermostMCPServer', port: int = 8080):
+def start_metrics_http_server(server, port: int = 8080):
     """
     Example of how to start a simple HTTP server to expose metrics.
     
