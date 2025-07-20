@@ -30,8 +30,6 @@ class MattermostMCPServer:
 
     def __init__(
         self,
-        mattermost_url: str,
-        mattermost_token: str,
         team_id: Optional[str] = None,
         enable_streaming: bool = True,
         enable_polling: bool = True,
@@ -45,19 +43,15 @@ class MattermostMCPServer:
         Initialize the Mattermost MCP server.
 
         Args:
-            mattermost_url: The URL of the Mattermost instance
-            mattermost_token: API token for authentication
             team_id: Optional team ID to scope operations to
             enable_streaming: Whether to enable WebSocket streaming
             enable_polling: Whether to enable REST polling
             polling_interval: Polling interval in seconds
             channel_ids: Optional list of channel IDs to monitor (all if None)
             webhook_secret: Optional webhook secret for validation
-            ws_url: Optional WebSocket URL (overrides default from mattermost_url)
+            ws_url: Optional WebSocket URL for streaming
             default_channel: Optional default channel ID for operations
         """
-        self.mattermost_url = mattermost_url.rstrip("/")
-        self.mattermost_token = mattermost_token
         self.team_id = team_id
         self.enable_streaming = enable_streaming
         self.enable_polling = enable_polling
@@ -87,13 +81,11 @@ class MattermostMCPServer:
 
         logger.info(
             "Initializing Mattermost MCP server",
-            url=self.mattermost_url,
             team_id=self.team_id,
             streaming=self.enable_streaming,
             polling=self.enable_polling,
             channels=len(channel_ids) if channel_ids else "all",
             webhook_secret_set=bool(self.webhook_secret),
-            ws_url=self.ws_url,
             default_channel=self.default_channel,
         )
 
@@ -101,8 +93,6 @@ class MattermostMCPServer:
         """Initialize MCP resources."""
         # New channel posts resource
         new_posts_resource = NewChannelPostResource(
-            mattermost_url=self.mattermost_url,
-            token=self.mattermost_token,
             channel_ids=self.channel_ids,
             team_id=self.team_id,
         )
@@ -110,8 +100,6 @@ class MattermostMCPServer:
 
         # Reactions resource
         reactions_resource = ReactionResource(
-            mattermost_url=self.mattermost_url,
-            token=self.mattermost_token,
             channel_ids=self.channel_ids,
             team_id=self.team_id,
         )
@@ -276,14 +264,19 @@ class MattermostMCPServer:
             logger.warning("WebSocket client already initialized")
             return
 
-        logger.info("Initializing WebSocket client", url=self.mattermost_url)
+        # Skip initialization if not authenticated
+        from .auth import get_auth_state
 
-        # Use custom WebSocket URL if provided, otherwise derive from Mattermost URL
-        websocket_url = self.ws_url or self.mattermost_url
+        auth_state = get_auth_state()
+        if not auth_state.is_authenticated:
+            logger.debug("Skipping WebSocket initialization - not authenticated")
+            return
+
+        logger.info("Initializing WebSocket client", url=auth_state.mattermost_url)
 
         self.websocket_client = MattermostWebSocketClient(
-            mattermost_url=websocket_url,
-            token=self.mattermost_token,
+            mattermost_url=auth_state.mattermost_url,
+            token=auth_state.token,
             auto_reconnect=True,
             reconnect_delay=5.0,
             max_reconnect_attempts=10,

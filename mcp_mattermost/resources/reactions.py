@@ -12,6 +12,8 @@ from typing import Any, Dict, List, Optional, Set
 import structlog
 
 from ..api.client import AsyncHTTPClient
+from ..api.exceptions import MattermostAPIError
+from ..auth import get_auth_state
 from ..events.websocket import MattermostWebSocketClient
 from .base import BaseMCPResource, ResourceUpdate, ResourceUpdateType
 
@@ -23,8 +25,6 @@ class ReactionResource(BaseMCPResource):
 
     def __init__(
         self,
-        mattermost_url: str,
-        token: str,
         channel_ids: Optional[List[str]] = None,
         team_id: Optional[str] = None,
     ):
@@ -32,8 +32,6 @@ class ReactionResource(BaseMCPResource):
         Initialize the reaction resource.
 
         Args:
-            mattermost_url: Mattermost server URL
-            token: API token
             channel_ids: Optional list of channel IDs to monitor (all if None)
             team_id: Optional team ID to scope to
         """
@@ -43,8 +41,6 @@ class ReactionResource(BaseMCPResource):
             mime_type="application/json",
         )
 
-        self.mattermost_url = mattermost_url
-        self.token = token
         self.channel_ids = set(channel_ids) if channel_ids else None
         self.team_id = team_id
 
@@ -74,8 +70,12 @@ class ReactionResource(BaseMCPResource):
 
     async def read(self, uri: str, **kwargs) -> Dict[str, Any]:
         """Read current state - returns recent reactions."""
-        if not self._http_client:
-            self._http_client = AsyncHTTPClient(self.mattermost_url, self.token)
+        auth_state = get_auth_state()
+        auth_state.require_authentication()
+
+        http_client = auth_state.get_http_client()
+        if not http_client:
+            raise MattermostAPIError("No authenticated HTTP client available")
 
         try:
             # Get recent posts with reactions
@@ -88,15 +88,13 @@ class ReactionResource(BaseMCPResource):
                 channels_to_read = list(self.channel_ids)
             elif self.team_id:
                 # Get all channels for the team
-                channels_data = await self._http_client.get(
-                    f"/teams/{self.team_id}/channels"
-                )
+                channels_data = await http_client.get(f"/teams/{self.team_id}/channels")
                 channels_to_read = [ch["id"] for ch in channels_data]
 
             # Get recent posts and their reactions
             for channel_id in channels_to_read:
                 try:
-                    posts_data = await self._http_client.get(
+                    posts_data = await http_client.get(
                         f"/channels/{channel_id}/posts", params={"per_page": 20}
                     )
 
@@ -111,7 +109,7 @@ class ReactionResource(BaseMCPResource):
 
                         # Get reactions for this post
                         try:
-                            reactions_data = await self._http_client.get(
+                            reactions_data = await http_client.get(
                                 f"/posts/{post_id}/reactions"
                             )
 
@@ -160,10 +158,13 @@ class ReactionResource(BaseMCPResource):
 
     async def _start_streaming(self, **kwargs) -> None:
         """Start WebSocket streaming for reaction events."""
+        auth_state = get_auth_state()
+        auth_state.require_authentication()
+
         logger.info("Starting WebSocket streaming for reactions")
 
         self._ws_client = MattermostWebSocketClient(
-            self.mattermost_url, self.token, auto_reconnect=True
+            auth_state.mattermost_url, auth_state.token, auto_reconnect=True
         )
 
         # Register event handlers for reactions
@@ -284,8 +285,12 @@ class ReactionResource(BaseMCPResource):
 
     async def _poll_for_updates(self, **kwargs) -> None:
         """Poll for reaction changes using REST API."""
+        auth_state = get_auth_state()
         if not self._http_client:
-            self._http_client = AsyncHTTPClient(self.mattermost_url, self.token)
+            self._http_client = auth_state.get_http_client()
+            if not self._http_client:
+                logger.warning("No authenticated HTTP client available for polling")
+                return
 
         logger.debug("Polling for reaction updates")
 

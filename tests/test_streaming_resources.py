@@ -2,8 +2,7 @@
 Tests for streaming MCP resources.
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -63,40 +62,30 @@ class TestNewChannelPostResource:
     def test_init(self):
         """Test resource initialization."""
         resource = NewChannelPostResource(
-            mattermost_url="https://test.com",
-            token="test-token",
             channel_ids=["ch1", "ch2"],
             team_id="team1",
         )
 
         assert resource.name == "new_channel_posts"
-        assert resource.mattermost_url == "https://test.com"
-        assert resource.token == "test-token"
         assert resource.channel_ids == {"ch1", "ch2"}
         assert resource.team_id == "team1"
         assert resource.uri == "mattermost://new_channel_posts"
 
     def test_supports_streaming(self):
         """Test that resource supports streaming."""
-        resource = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = NewChannelPostResource()
 
         assert resource.supports_streaming() is True
 
     def test_supports_polling(self):
         """Test that resource supports polling."""
-        resource = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = NewChannelPostResource()
 
         assert resource.supports_polling() is True
 
     def test_get_definition(self):
         """Test getting resource definition."""
-        resource = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = NewChannelPostResource()
 
         definition = resource.get_definition()
 
@@ -113,32 +102,24 @@ class TestReactionResource:
     def test_init(self):
         """Test resource initialization."""
         resource = ReactionResource(
-            mattermost_url="https://test.com",
-            token="test-token",
             channel_ids=["ch1", "ch2"],
             team_id="team1",
         )
 
         assert resource.name == "reactions"
-        assert resource.mattermost_url == "https://test.com"
-        assert resource.token == "test-token"
         assert resource.channel_ids == {"ch1", "ch2"}
         assert resource.team_id == "team1"
         assert resource.uri == "mattermost://reactions"
 
     def test_supports_streaming(self):
         """Test that resource supports streaming."""
-        resource = ReactionResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = ReactionResource()
 
         assert resource.supports_streaming() is True
 
     def test_supports_polling(self):
         """Test that resource supports polling."""
-        resource = ReactionResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = ReactionResource()
 
         assert resource.supports_polling() is True
 
@@ -154,9 +135,7 @@ class TestMCPResourceRegistry:
     def test_register_resource(self):
         """Test registering a resource."""
         registry = MCPResourceRegistry()
-        resource = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = NewChannelPostResource()
 
         registry.register(resource)
 
@@ -166,9 +145,7 @@ class TestMCPResourceRegistry:
     def test_unregister_resource(self):
         """Test unregistering a resource."""
         registry = MCPResourceRegistry()
-        resource = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = NewChannelPostResource()
 
         registry.register(resource)
         assert len(registry._resources) == 1
@@ -180,12 +157,8 @@ class TestMCPResourceRegistry:
     def test_list_resources(self):
         """Test listing resources."""
         registry = MCPResourceRegistry()
-        resource1 = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
-        resource2 = ReactionResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource1 = NewChannelPostResource()
+        resource2 = ReactionResource()
 
         registry.register(resource1)
         registry.register(resource2)
@@ -201,9 +174,7 @@ class TestMCPResourceRegistry:
     def test_get_streaming_resources(self):
         """Test getting streaming resources."""
         registry = MCPResourceRegistry()
-        resource = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = NewChannelPostResource()
 
         registry.register(resource)
 
@@ -214,9 +185,7 @@ class TestMCPResourceRegistry:
     def test_get_polling_resources(self):
         """Test getting polling resources."""
         registry = MCPResourceRegistry()
-        resource = NewChannelPostResource(
-            mattermost_url="https://test.com", token="test-token"
-        )
+        resource = NewChannelPostResource()
 
         registry.register(resource)
 
@@ -231,16 +200,12 @@ class TestMattermostMCPServer:
     def test_init_with_streaming_resources(self):
         """Test server initialization with streaming configuration."""
         server = MattermostMCPServer(
-            mattermost_url="https://test.com",
-            mattermost_token="test-token",
             team_id="team1",
             enable_streaming=True,
             enable_polling=False,
             channel_ids=["ch1", "ch2"],
         )
 
-        assert server.mattermost_url == "https://test.com"
-        assert server.mattermost_token == "test-token"
         assert server.team_id == "team1"
         assert server.enable_streaming is True
         assert server.enable_polling is False
@@ -256,9 +221,7 @@ class TestMattermostMCPServer:
 
     def test_get_resources(self):
         """Test getting resource definitions."""
-        server = MattermostMCPServer(
-            mattermost_url="https://test.com", mattermost_token="test-token"
-        )
+        server = MattermostMCPServer()
 
         resources = server.get_resources()
         assert len(resources) == 2
@@ -273,9 +236,7 @@ class TestMattermostMCPServer:
 
     def test_resource_update_callback(self):
         """Test resource update callback."""
-        server = MattermostMCPServer(
-            mattermost_url="https://test.com", mattermost_token="test-token"
-        )
+        server = MattermostMCPServer()
 
         updates_received = []
 
@@ -299,9 +260,7 @@ class TestMattermostMCPServer:
     @pytest.mark.asyncio
     async def test_read_resource(self):
         """Test reading a resource."""
-        server = MattermostMCPServer(
-            mattermost_url="https://test.com", mattermost_token="test-token"
-        )
+        server = MattermostMCPServer()
 
         # Mock the resource's read method
         resource = server.resource_registry.get("mattermost://new_channel_posts")
@@ -315,9 +274,7 @@ class TestMattermostMCPServer:
     @pytest.mark.asyncio
     async def test_read_nonexistent_resource(self):
         """Test reading a nonexistent resource."""
-        server = MattermostMCPServer(
-            mattermost_url="https://test.com", mattermost_token="test-token"
-        )
+        server = MattermostMCPServer()
 
         with pytest.raises(ValueError, match="Resource not found"):
             await server.read_resource("nonexistent://resource")
@@ -327,8 +284,6 @@ class TestMattermostMCPServer:
 async def test_server_lifecycle():
     """Test server start/stop lifecycle."""
     server = MattermostMCPServer(
-        mattermost_url="https://test.com",
-        mattermost_token="test-token",
         enable_streaming=False,  # Disable to avoid WebSocket connection
         enable_polling=True,
         polling_interval=60.0,

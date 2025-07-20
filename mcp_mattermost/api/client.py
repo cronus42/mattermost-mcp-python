@@ -238,17 +238,9 @@ class AsyncHTTPClient:
 
         # Handle other client/server errors
         if response.status_code >= 400:
-            error_data = self._parse_response_data(response)
-            error_message = f"HTTP {response.status_code}"
+            from .exceptions import create_http_exception
 
-            if isinstance(error_data, dict) and "message" in error_data:
-                error_message = f"{error_message}: {error_data['message']}"
-            elif isinstance(error_data, str):
-                error_message = f"{error_message}: {error_data}"
-
-            raise HTTPError(
-                error_message, status_code=response.status_code, response=response
-            )
+            raise create_http_exception(response)
 
         return self._parse_response_data(response)
 

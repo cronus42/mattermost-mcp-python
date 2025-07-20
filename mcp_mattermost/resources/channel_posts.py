@@ -12,6 +12,8 @@ from typing import Any, Dict, List, Optional
 import structlog
 
 from ..api.client import AsyncHTTPClient
+from ..api.exceptions import MattermostAPIError
+from ..auth import get_auth_state
 from ..events.websocket import MattermostWebSocketClient
 from ..models.posts import Post
 from .base import BaseMCPResource, ResourceUpdate, ResourceUpdateType
@@ -24,8 +26,6 @@ class NewChannelPostResource(BaseMCPResource):
 
     def __init__(
         self,
-        mattermost_url: str,
-        token: str,
         channel_ids: Optional[List[str]] = None,
         team_id: Optional[str] = None,
     ):
@@ -33,8 +33,6 @@ class NewChannelPostResource(BaseMCPResource):
         Initialize the new channel post resource.
 
         Args:
-            mattermost_url: Mattermost server URL
-            token: API token
             channel_ids: Optional list of channel IDs to monitor (all if None)
             team_id: Optional team ID to scope to
         """
@@ -44,8 +42,6 @@ class NewChannelPostResource(BaseMCPResource):
             mime_type="application/json",
         )
 
-        self.mattermost_url = mattermost_url
-        self.token = token
         self.channel_ids = set(channel_ids) if channel_ids else None
         self.team_id = team_id
 
@@ -74,8 +70,12 @@ class NewChannelPostResource(BaseMCPResource):
 
     async def read(self, uri: str, **kwargs) -> Dict[str, Any]:
         """Read current state - returns recent posts from channels."""
-        if not self._http_client:
-            self._http_client = AsyncHTTPClient(self.mattermost_url, self.token)
+        auth_state = get_auth_state()
+        auth_state.require_authentication()
+
+        http_client = auth_state.get_http_client()
+        if not http_client:
+            raise MattermostAPIError("No authenticated HTTP client available")
 
         try:
             # Get channels to read from
@@ -85,16 +85,14 @@ class NewChannelPostResource(BaseMCPResource):
                 channels_to_read = list(self.channel_ids)
             elif self.team_id:
                 # Get all channels for the team
-                channels_data = await self._http_client.get(
-                    f"/teams/{self.team_id}/channels"
-                )
+                channels_data = await http_client.get(f"/teams/{self.team_id}/channels")
                 channels_to_read = [ch["id"] for ch in channels_data]
 
             # Get recent posts from each channel
             recent_posts = []
             for channel_id in channels_to_read:
                 try:
-                    posts_data = await self._http_client.get(
+                    posts_data = await http_client.get(
                         f"/channels/{channel_id}/posts", params={"per_page": 10}
                     )
 
@@ -132,8 +130,11 @@ class NewChannelPostResource(BaseMCPResource):
         """Start WebSocket streaming for new posts."""
         logger.info("Starting WebSocket streaming for new channel posts")
 
+        auth_state = get_auth_state()
+        auth_state.require_authentication()
+
         self._ws_client = MattermostWebSocketClient(
-            self.mattermost_url, self.token, auto_reconnect=True
+            auth_state.mattermost_url, auth_state.token, auto_reconnect=True
         )
 
         # Register event handler for new posts
@@ -203,8 +204,15 @@ class NewChannelPostResource(BaseMCPResource):
 
     async def _poll_for_updates(self, **kwargs) -> None:
         """Poll for new posts using REST API."""
-        if not self._http_client:
-            self._http_client = AsyncHTTPClient(self.mattermost_url, self.token)
+        auth_state = get_auth_state()
+        if not auth_state.is_authenticated:
+            logger.debug("Skipping poll - not authenticated")
+            return
+
+        http_client = auth_state.get_http_client()
+        if not http_client:
+            logger.debug("Skipping poll - no HTTP client available")
+            return
 
         logger.debug("Polling for new channel posts")
 
@@ -216,9 +224,7 @@ class NewChannelPostResource(BaseMCPResource):
                 channels_to_poll = list(self.channel_ids)
             elif self.team_id:
                 # Get all channels for the team
-                channels_data = await self._http_client.get(
-                    f"/teams/{self.team_id}/channels"
-                )
+                channels_data = await http_client.get(f"/teams/{self.team_id}/channels")
                 channels_to_poll = [ch["id"] for ch in channels_data]
 
             # Poll each channel for new posts
@@ -234,10 +240,13 @@ class NewChannelPostResource(BaseMCPResource):
             # Get the last post timestamp for this channel
             since_timestamp = self._last_post_times.get(channel_id, 0)
 
-            # Get recent posts
-            if not self._http_client:
+            # Get authenticated HTTP client
+            auth_state = get_auth_state()
+            http_client = auth_state.get_http_client()
+            if not http_client:
                 return
-            posts_data = await self._http_client.get(
+
+            posts_data = await http_client.get(
                 f"/channels/{channel_id}/posts",
                 params={"per_page": 20, "since": since_timestamp},
             )

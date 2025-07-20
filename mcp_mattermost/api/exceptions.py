@@ -207,6 +207,17 @@ class ConnectionError(HTTPError):
     pass
 
 
+class MattermostAPIError(HTTPError):
+    """
+    Exception raised for Mattermost API-specific errors.
+
+    This is a general exception for Mattermost API operations that
+    provides additional context specific to Mattermost interactions.
+    """
+
+    pass
+
+
 def create_http_exception(
     response: httpx.Response, default_message: Optional[str] = None
 ) -> HTTPError:
@@ -229,13 +240,17 @@ def create_http_exception(
     message = default_message or f"HTTP {status_code}"
 
     try:
-        if "application/json" in response.headers.get("content-type", ""):
+        # Check for JSON content type (case-insensitive)
+        content_type = response.headers.get(
+            "content-type", response.headers.get("Content-Type", "")
+        ).lower()
+        if "application/json" in content_type:
             error_data = response.json()
             if isinstance(error_data, dict):
                 # Try different common error message fields
                 for field in ["message", "error", "detail", "error_description"]:
                     if field in error_data:
-                        message = f"HTTP {status_code}: {error_data[field]}"
+                        message = error_data[field]  # Use just the extracted message
                         break
     except Exception:
         # If we can't parse the error response, use the default message

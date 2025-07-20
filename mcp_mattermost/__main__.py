@@ -65,8 +65,8 @@ class ServerConfig:
 
     def __init__(
         self,
-        mattermost_url: str,
-        mattermost_token: str,
+        mattermost_url: Optional[str] = None,
+        mattermost_token: Optional[str] = None,
         team_id: Optional[str] = None,
         webhook_secret: Optional[str] = None,
         ws_url: Optional[str] = None,
@@ -210,16 +210,13 @@ def get_config_from_env_and_args(args: argparse.Namespace) -> ServerConfig:
     enable_polling = not args.no_polling
     polling_interval = args.polling_interval
 
-    # Validate required configuration
-    if not mattermost_url:
-        raise ValueError(
-            "MATTERMOST_URL is required (set via env var or --mattermost-url)"
-        )
+    # For dynamic authentication mode, credentials are optional at startup
+    # They will be provided later by Warp via the authentication tools
+    if mattermost_url and not mattermost_token:
+        raise ValueError("MATTERMOST_TOKEN is required when MATTERMOST_URL is provided")
 
-    if not mattermost_token:
-        raise ValueError(
-            "MATTERMOST_TOKEN is required (set via env var or --mattermost-token)"
-        )
+    if mattermost_token and not mattermost_url:
+        raise ValueError("MATTERMOST_URL is required when MATTERMOST_TOKEN is provided")
 
     return ServerConfig(
         mattermost_url=mattermost_url,
@@ -238,8 +235,8 @@ def get_config_from_env_and_args(args: argparse.Namespace) -> ServerConfig:
     )
 
 
-async def main() -> None:
-    """Main entry point."""
+async def async_main() -> None:
+    """Async main entry point."""
     try:
         # Parse command-line arguments
         args = parse_args()
@@ -264,15 +261,23 @@ async def main() -> None:
             polling_interval=config.polling_interval,
         )
 
+        # Initialize authentication with the provided credentials
+        from .auth import auth_state
+
+        # Set up authentication if credentials are provided
+        if config.mattermost_url and config.mattermost_token:
+            await auth_state.authenticate(
+                mattermost_url=config.mattermost_url,
+                token=config.mattermost_token,
+                team_id=config.team_id,
+            )
+
         # Create and start the server
         server = MattermostMCPServer(
-            mattermost_url=config.mattermost_url,
-            mattermost_token=config.mattermost_token,
             team_id=config.team_id,
             enable_streaming=config.enable_streaming,
             enable_polling=config.enable_polling,
             polling_interval=config.polling_interval,
-            # Pass additional config for future use
             webhook_secret=config.webhook_secret,
             ws_url=config.ws_url,
             default_channel=config.default_channel,
@@ -295,5 +300,10 @@ async def main() -> None:
         sys.exit(1)
 
 
+def main() -> None:
+    """Synchronous main entry point for console scripts."""
+    asyncio.run(async_main())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
