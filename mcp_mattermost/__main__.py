@@ -43,7 +43,7 @@ def configure_logging(log_format: str = "console", log_level: str = "INFO") -> N
         processors.append(structlog.dev.ConsoleRenderer())
 
     structlog.configure(
-        processors=processors,
+        processors=processors,  # type: ignore[arg-type]
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,

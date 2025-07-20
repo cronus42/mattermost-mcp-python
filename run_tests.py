@@ -41,10 +41,15 @@ def run_command(cmd, description="", check=True):
 def check_dependencies():
     """Check if test dependencies are installed."""
     try:
-        import httpx_mock
         import pytest
 
         import mcp_mattermost
+
+        # Try to import httpx_mock but don't fail if it's missing
+        try:
+            import httpx_mock  # type: ignore[import-not-found]
+        except ImportError:
+            print("⚠️ httpx_mock not available - some tests may be skipped")
 
         return True
     except ImportError as e:
@@ -235,7 +240,6 @@ Environment Variables for Live Tests:
   MATTERMOST_TEST_CHANNEL_ID=channel-id      # Optional test channel
         """,
     )
-
     parser.add_argument(
         "test_type",
         choices=["unit", "mock", "live", "all", "report"],

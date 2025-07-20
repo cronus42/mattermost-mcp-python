@@ -1,0 +1,86 @@
+{
+  "mcpServers": {
+    "mattermost": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_mattermost"
+      ],
+      "env": {
+        "MATTERMOST_URL": "https://your-mattermost-instance.com",
+        "MATTERMOST_TOKEN": "your-bot-token-here",
+        "MATTERMOST_TEAM_ID": "your-team-id",
+        "MCP_SERVER_HOST": "localhost",
+        "MCP_SERVER_PORT": "3000",
+        "LOG_LEVEL": "INFO",
+        "ENABLE_STREAMING": "true",
+        "ENABLE_POLLING": "true"
+      },
+      "description": "Mattermost MCP server for team communication",
+      "disabled": false
+    }
+  },
+  "resources": [
+    {
+      "uri": "mattermost://new_channel_posts",
+      "name": "Channel Posts Stream",
+      "description": "Real-time stream of new posts from monitored channels"
+    },
+    {
+      "uri": "mattermost://reactions", 
+      "name": "Message Reactions",
+      "description": "Real-time stream of emoji reactions on posts"
+    }
+  ],
+  "tools": [
+    {
+      "name": "send_message",
+      "description": "Send a message to a Mattermost channel",
+      "parameters": {
+        "channel_id": {
+          "type": "string",
+          "description": "The channel ID to send the message to"
+        },
+        "message": {
+          "type": "string", 
+          "description": "The message text to send"
+        },
+        "root_id": {
+          "type": "string",
+          "description": "Optional root post ID for threading",
+          "required": false
+        }
+      }
+    },
+    {
+      "name": "get_channel_history",
+      "description": "Retrieve message history from a channel",
+      "parameters": {
+        "channel_id": {
+          "type": "string",
+          "description": "The channel ID to get history from"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Number of messages to retrieve (default: 60)",
+          "required": false
+        }
+      }
+    },
+    {
+      "name": "search_channels",
+      "description": "Search for channels by name or topic",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "Search query for channel names or topics"
+        },
+        "team_id": {
+          "type": "string", 
+          "description": "Optional team ID to scope search",
+          "required": false
+        }
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@ API latency, error rates, and other operational metrics.
 import functools
 import time
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
 
 import structlog
 
@@ -321,9 +321,9 @@ def record_request_metrics(
         import asyncio
 
         if asyncio.iscoroutinefunction(func):
-            return async_wrapper
+            return cast(F, async_wrapper)
         else:
-            return sync_wrapper
+            return cast(F, sync_wrapper)
 
     return decorator
 

@@ -10,12 +10,13 @@ import json
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, cast
 from urllib.parse import urljoin, urlparse
 
 import structlog
 import websockets
 from websockets.exceptions import ConnectionClosed, WebSocketException
+from websockets.legacy.client import WebSocketClientProtocol
 
 logger = structlog.get_logger(__name__)
 
@@ -92,7 +93,7 @@ class MattermostWebSocketClient:
         self.max_reconnect_attempts = max_reconnect_attempts
 
         # WebSocket connection
-        self._websocket: Optional[websockets.WebSocketServerProtocol] = None
+        self._websocket: Optional[WebSocketClientProtocol] = None
         self._connection_task: Optional[asyncio.Task] = None
         self._is_connected = False
         self._is_authenticated = False
@@ -101,7 +102,7 @@ class MattermostWebSocketClient:
 
         # Event handlers
         self._event_handlers: Dict[str, List[Callable[[Dict[str, Any]], None]]] = {}
-        self._message_handlers: Dict[int, Callable[[WebSocketMessage], None]] = {}
+        self._message_handlers: Dict[int, Callable[[Dict[str, Any]], None]] = {}
 
         # Build WebSocket URL
         parsed = urlparse(self.mattermost_url)
@@ -236,12 +237,13 @@ class MattermostWebSocketClient:
         """Connect to the WebSocket and authenticate."""
         logger.debug("Establishing WebSocket connection")
 
-        self._websocket = await websockets.connect(
+        connection = await websockets.connect(
             self.ws_url,
             ping_interval=30,
             ping_timeout=10,
             close_timeout=10,
         )
+        self._websocket = cast(WebSocketClientProtocol, connection)
 
         self._is_connected = True
         logger.debug("WebSocket connected, authenticating...")
@@ -255,6 +257,8 @@ class MattermostWebSocketClient:
 
         # Wait for authentication response
         try:
+            if not self._websocket:
+                raise RuntimeError("WebSocket not connected")
             response_data = await asyncio.wait_for(self._websocket.recv(), timeout=10.0)
             response = json.loads(response_data)
 
@@ -271,6 +275,8 @@ class MattermostWebSocketClient:
         """Main message processing loop."""
         logger.debug("Starting message loop")
 
+        if self._websocket is None:
+            raise RuntimeError("WebSocket not connected")
         async for message_data in self._websocket:
             try:
                 data = json.loads(message_data)
@@ -290,7 +296,15 @@ class MattermostWebSocketClient:
         if message.seq_reply and message.seq_reply in self._message_handlers:
             handler = self._message_handlers.pop(message.seq_reply)
             try:
-                handler(message)
+                # Convert message to dict for handler
+                handler_data = {
+                    "seq": message.seq,
+                    "seq_reply": message.seq_reply,
+                    "data": message.data,
+                    "status": message.status,
+                    "error": message.error,
+                }
+                handler(handler_data)
             except Exception as e:
                 logger.error("Error in message response handler", error=str(e))
             return
@@ -310,14 +324,13 @@ class MattermostWebSocketClient:
             handlers = self._event_handlers.get(message.event, [])
             for handler in handlers:
                 try:
-                    handler(
-                        {
-                            "event": message.event,
-                            "data": message.data or {},
-                            "broadcast": message.broadcast or {},
-                            "timestamp": time.time(),
-                        }
-                    )
+                    event_dict = {
+                        "event": message.event,
+                        "data": message.data or {},
+                        "broadcast": message.broadcast or {},
+                        "timestamp": time.time(),
+                    }
+                    handler(event_dict)
                 except Exception as e:
                     logger.error(
                         "Error in event handler",

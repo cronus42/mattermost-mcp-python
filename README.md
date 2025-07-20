@@ -1,8 +1,8 @@
 # Mattermost MCP Python
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
-[![MCP](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)][python-org]
+[![MCP](https://img.shields.io/badge/MCP-compatible-green.svg)][mcp-protocol]
 
 A comprehensive Model Context Protocol (MCP) server implementation for Mattermost integration, enabling AI assistants to seamlessly interact with Mattermost channels, users, and messaging features.
 
@@ -10,18 +10,51 @@ A comprehensive Model Context Protocol (MCP) server implementation for Mattermos
 
 **Docker Compose (Recommended)**
 ```bash
-git clone https://github.com/cronus42/mattermost-mcp-python.git
+git clone [Repository](https://github.com/cronus42/mattermost-mcp-python.git)
 cd mattermost-mcp-python
 cp .env.example .env
 # Edit .env with your Mattermost configuration
 docker-compose up -d
 ```
 
+🔗 [GitHub](https://github.com/cronus42/mattermost-mcp-python)
+
 **Manual Installation**
 ```bash
 pip install mattermost-mcp-python
 python -m mcp_mattermost
 ```
+
+### Table of Contents
+- [🚀 Quick Start](#-quick-start)
+  - [Docker Compose (Recommended)](#option-1-docker-compose-recommended)
+  - [Python Installation](#option-2-python-installation)
+- [✨ Features](#-features)
+  - [🔌 MCP Server](#-mcp-server)
+  - [🌐 Advanced HTTP Client](#-advanced-http-client)
+  - [📊 Typed Models](#-typed-models)
+  - [🔧 Domain Services](#-domain-services)
+  - [📡 Real-time Capabilities](#-real-time-capabilities)
+  - [🛠️ Developer Experience](#%EF%B8%8F-developer-experience)
+  - [🚀 CI/CD Pipeline](#-cicd-pipeline)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [📖 Documentation](#-documentation)
+- [🛠️ Available Tools](#%EF%B8%8F-available-tools)
+  - [💬 Messaging](#-messaging)
+  - [🏗️ Channel Management](#-channel-management)
+  - [👥 User Operations](#-user-operations)
+  - [📁 File Handling](#-file-handling)
+- [💡 Usage Examples](#%EF%B8%8F-usage-examples)
+  - [Send a Message](#send-a-message)
+  - [Create Channel and Add Users](#create-channel-and-add-users)
+  - [Real-time Monitoring](#real-time-monitoring)
+- [🎯 Use Cases](#-use-cases)
+- [🏗️ Architecture](#%EF%B8%8F-architecture)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
 ## ✨ Features
 
@@ -119,18 +152,19 @@ Copy `.env.example` to `.env` and configure the following variables:
 
 ```bash
 # Clone and setup
-git clone https://github.com/cronus42/mattermost-mcp-python.git
+git clone [Repository](https://github.com/cronus42/mattermost-mcp-python.git)
 cd mattermost-mcp-python
 cp .env.example .env
 
-# Edit .env with your Mattermost configuration
-# Then start all services:
 docker-compose up -d
 
+# Edit .env with your Mattermost configuration
+# Then start all services:
+
 # Access:
-# - Mattermost: http://localhost:8065
-# - MCP Server: http://localhost:3000
-# - Health Check: http://localhost:3000/health
+# - **Mattermost**: [localhost:8065](http://localhost:8065)
+# - **MCP Server**: [localhost:3000](http://localhost:3000)
+# - **Health Check**: [localhost:3000/health](http://localhost:3000/health)
 ```
 
 ### Option 2: Python Installation
@@ -301,4 +335,14 @@ pytest
 
 ## Support
 
-For issues and questions, please open an issue on the GitHub repository.
+For issues and questions, please open an issue on the [GitHub repository][github-repo].
+
+---
+
+<!-- Reference Links -->
+[github-repo]: https://github.com/cronus42/mattermost-mcp-python
+[python-org]: https://python.org
+[mcp-protocol]: https://modelcontextprotocol.io
+[localhost-8065]: http://localhost:8065
+[localhost-3000]: http://localhost:3000
+[localhost-health]: http://localhost:3000/health

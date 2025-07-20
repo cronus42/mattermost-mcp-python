@@ -9,7 +9,7 @@ import asyncio
 import json
 import time
 from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 import httpx
@@ -32,7 +32,7 @@ class RateLimiter:
     def __init__(self, requests_per_second: float = 10.0, burst: int = 20):
         self.requests_per_second = requests_per_second
         self.burst = burst
-        self.tokens = burst
+        self.tokens = float(burst)
         self.last_refill = time.monotonic()
         self._lock = asyncio.Lock()
 
@@ -43,7 +43,7 @@ class RateLimiter:
             # Add tokens based on elapsed time
             elapsed = now - self.last_refill
             self.tokens = min(
-                self.burst, self.tokens + elapsed * self.requests_per_second
+                float(self.burst), self.tokens + elapsed * self.requests_per_second
             )
             self.last_refill = now
 
@@ -174,7 +174,7 @@ class AsyncHTTPClient:
         Returns:
             Tuple of (serialized_data, updated_headers)
         """
-        headers = {}
+        headers: Dict[str, str] = {}
 
         if data is None:
             return None, headers
@@ -513,7 +513,7 @@ class AsyncHTTPClient:
 @asynccontextmanager
 async def create_http_client(
     base_url: str, token: Optional[str] = None, **kwargs
-) -> AsyncHTTPClient:
+) -> AsyncIterator[AsyncHTTPClient]:
     """
     Context manager for creating and properly closing an HTTP client.
 

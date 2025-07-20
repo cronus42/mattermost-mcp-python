@@ -285,7 +285,7 @@ class ReactionResource(BaseMCPResource):
         logger.debug("Polling for reaction updates")
 
         try:
-            current_reactions = set()
+            current_reactions: set[str] = set()
 
             # Get channels to poll
             channels_to_poll = []
@@ -336,6 +336,8 @@ class ReactionResource(BaseMCPResource):
         """Poll a specific channel for reaction changes."""
         try:
             # Get recent posts
+            if not self._http_client:
+                return
             posts_data = await self._http_client.get(
                 f"/channels/{channel_id}/posts",
                 params={"per_page": 50},  # Check more posts for reactions
@@ -351,6 +353,8 @@ class ReactionResource(BaseMCPResource):
                     continue
 
                 try:
+                    if not self._http_client:
+                        continue
                     reactions_data = await self._http_client.get(
                         f"/posts/{post_id}/reactions"
                     )

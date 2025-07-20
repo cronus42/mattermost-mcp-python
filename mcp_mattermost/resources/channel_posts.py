@@ -236,6 +236,8 @@ class NewChannelPostResource(BaseMCPResource):
             since_timestamp = self._last_post_times.get(channel_id, 0)
 
             # Get recent posts
+            if not self._http_client:
+                return
             posts_data = await self._http_client.get(
                 f"/channels/{channel_id}/posts",
                 params={"per_page": 20, "since": since_timestamp},

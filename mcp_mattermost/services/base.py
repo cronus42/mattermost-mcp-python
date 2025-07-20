@@ -15,7 +15,8 @@ from ..models.base import MattermostBase, MattermostResponse
 
 logger = structlog.get_logger(__name__)
 
-T = TypeVar("T", bound=MattermostBase)
+# More flexible type variable that can handle any type, not just MattermostBase
+T = TypeVar("T")
 
 
 class BaseService:
@@ -44,7 +45,7 @@ class BaseService:
         data: Any = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-    ) -> T:
+    ) -> Any:
         """
         Make an HTTP request and parse the response into a model.
 
@@ -80,20 +81,8 @@ class BaseService:
                 headers=headers,
             )
 
-            # Parse response into model
-            if response_data is None:
-                # Handle empty responses
-                return response_model()
-
-            parsed_response = response_model.model_validate(response_data)
-
-            self.logger.info(
-                "API request completed successfully",
-                method=method,
-                endpoint=endpoint,
-            )
-
-            return parsed_response
+            # Handle special cases for response parsing
+            return self._parse_response(response_data, response_model)
 
         except (HTTPError, AuthenticationError, RateLimitError) as e:
             self.logger.error(
@@ -113,6 +102,46 @@ class BaseService:
                 error_type=type(e).__name__,
             )
             raise HTTPError(f"Unexpected error: {e}")
+
+    def _parse_response(self, response_data: Any, response_model: Type[T]) -> Any:
+        """Parse response data based on response model type."""
+        # Handle None responses
+        if response_data is None:
+            if hasattr(response_model, "model_validate"):
+                return response_model()
+            return None
+
+        # Handle List[Model] types - check for typing generics
+        if hasattr(response_model, "__origin__"):
+            origin = getattr(response_model, "__origin__", None)
+            if origin is list:
+                item_type = getattr(response_model, "__args__", [None])[0]
+                if item_type and isinstance(response_data, list):
+                    return [item_type.model_validate(item) for item in response_data]
+                else:
+                    raise ValueError(
+                        f"Expected list response, got {type(response_data)}"
+                    )
+            elif origin is dict:
+                # For Dict[str, Model] types
+                args = getattr(response_model, "__args__", [])
+                if len(args) == 2:
+                    _, value_type = args
+                    if hasattr(value_type, "model_validate") and isinstance(
+                        response_data, dict
+                    ):
+                        return {
+                            k: value_type.model_validate(v)
+                            for k, v in response_data.items()
+                        }
+                return response_data
+
+        # Handle regular Pydantic models
+        if hasattr(response_model, "model_validate"):
+            return response_model.model_validate(response_data)  # type: ignore[attr-defined]
+
+        # For non-pydantic types, return as-is
+        return response_data
 
     async def _make_list_request(
         self,
@@ -149,7 +178,7 @@ class BaseService:
             if not isinstance(response_data, list):
                 raise ValueError(f"Expected list response, got {type(response_data)}")
 
-            return [item_model.model_validate(item) for item in response_data]
+            return [item_model.model_validate(item) for item in response_data]  # type: ignore[attr-defined]
 
         except (HTTPError, AuthenticationError, RateLimitError):
             raise
