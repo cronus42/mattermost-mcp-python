@@ -6,8 +6,7 @@ supporting both WebSocket streaming and REST polling.
 """
 
 import asyncio
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Set
 
 import structlog
@@ -218,7 +217,10 @@ class ReactionResource(BaseMCPResource):
                     "user_id": reaction_data.get("user_id"),
                     "emoji_name": reaction_data.get("emoji_name"),
                 },
-                event_id=f"reaction_{reaction_data.get('post_id')}_{reaction_data.get('user_id')}_{reaction_data.get('emoji_name')}",
+                event_id=(
+                    f"reaction_{reaction_data.get('post_id')}_"
+                    f"{reaction_data.get('user_id')}_{reaction_data.get('emoji_name')}"
+                ),
             )
 
             # Emit the update (async call from sync handler)
@@ -259,7 +261,10 @@ class ReactionResource(BaseMCPResource):
                     "user_id": reaction_data.get("user_id"),
                     "emoji_name": reaction_data.get("emoji_name"),
                 },
-                event_id=f"reaction_removed_{reaction_data.get('post_id')}_{reaction_data.get('user_id')}_{reaction_data.get('emoji_name')}",
+                event_id=(
+                    f"reaction_removed_{reaction_data.get('post_id')}_"
+                    f"{reaction_data.get('user_id')}_{reaction_data.get('emoji_name')}"
+                ),
             )
 
             # Emit the update (async call from sync handler)

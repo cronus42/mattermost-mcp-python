@@ -9,7 +9,7 @@ import asyncio
 import json
 import time
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 import httpx
@@ -20,7 +20,6 @@ from .exceptions import (
     AuthenticationError,
     HTTPError,
     RateLimitError,
-    create_http_exception,
 )
 
 logger = structlog.get_logger(__name__)

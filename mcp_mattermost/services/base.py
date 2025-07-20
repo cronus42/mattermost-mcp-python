@@ -5,13 +5,12 @@ This module provides a common base class with HTTP client functionality
 that all domain service classes inherit from.
 """
 
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 import structlog
 
 from ..api.client import AsyncHTTPClient
 from ..api.exceptions import AuthenticationError, HTTPError, RateLimitError
-from ..models.base import MattermostBase, MattermostResponse
 
 logger = structlog.get_logger(__name__)
 
@@ -138,7 +137,8 @@ class BaseService:
 
         # Handle regular Pydantic models
         if hasattr(response_model, "model_validate"):
-            return response_model.model_validate(response_data)  # type: ignore[attr-defined]
+            # type: ignore[attr-defined]
+            return response_model.model_validate(response_data)
 
         # For non-pydantic types, return as-is
         return response_data
@@ -178,7 +178,8 @@ class BaseService:
             if not isinstance(response_data, list):
                 raise ValueError(f"Expected list response, got {type(response_data)}")
 
-            return [item_model.model_validate(item) for item in response_data]  # type: ignore[attr-defined]
+            # type: ignore[attr-defined]
+            return [item_model.model_validate(item) for item in response_data]
 
         except (HTTPError, AuthenticationError, RateLimitError):
             raise

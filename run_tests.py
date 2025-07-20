@@ -41,13 +41,13 @@ def run_command(cmd, description="", check=True):
 def check_dependencies():
     """Check if test dependencies are installed."""
     try:
-        import pytest
+        import pytest  # noqa: F401
 
-        import mcp_mattermost
+        import mcp_mattermost  # noqa: F401
 
         # Try to import httpx_mock but don't fail if it's missing
         try:
-            import httpx_mock  # type: ignore[import-not-found]
+            import httpx_mock  # type: ignore[import-not-found]  # noqa: F401
         except ImportError:
             print("⚠️ httpx_mock not available - some tests may be skipped")
 
@@ -227,11 +227,11 @@ def main():
 Examples:
   python run_tests.py unit                    # Run unit tests only
   python run_tests.py mock                    # Run mocked integration tests
-  python run_tests.py live                    # Run live integration tests (if configured)
+  python run_tests.py live                    # Run live integration tests
   python run_tests.py all                     # Run all tests except live
   python run_tests.py all --include-live     # Run all tests including live
   python run_tests.py report                 # Generate comprehensive test report
-  
+
 Environment Variables for Live Tests:
   MATTERMOST_INTEGRATION_TESTS=true          # Enable live tests
   MATTERMOST_URL=https://your-instance.com   # Mattermost server URL

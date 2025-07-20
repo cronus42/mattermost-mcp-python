@@ -8,14 +8,12 @@ to receive real-time events like new posts, reactions, and other activities.
 import asyncio
 import json
 import time
-import uuid
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Set, cast
-from urllib.parse import urljoin, urlparse
+from typing import Any, Callable, Dict, List, Optional, cast
+from urllib.parse import urlparse
 
 import structlog
 import websockets
-from websockets.exceptions import ConnectionClosed, WebSocketException
 from websockets.legacy.client import WebSocketClientProtocol
 
 logger = structlog.get_logger(__name__)

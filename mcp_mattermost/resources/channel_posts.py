@@ -6,8 +6,7 @@ supporting both WebSocket streaming and REST polling.
 """
 
 import asyncio
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import structlog

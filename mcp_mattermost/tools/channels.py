@@ -5,7 +5,7 @@ This module provides MCP tools for channel operations including
 listing channels, creating channels, managing channel membership, etc.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import structlog
 
@@ -527,7 +527,9 @@ async def _get_channel_tool(**kwargs):
             },
             "type": {
                 "type": "string",
-                "description": "Channel type (O=Open/Public, P=Private, D=Direct, G=Group)",
+                "description": (
+                    "Channel type (O=Open/Public, P=Private, D=Direct, G=Group)"
+                ),
                 "enum": ["O", "P", "D", "G"],
                 "default": "O",
             },
