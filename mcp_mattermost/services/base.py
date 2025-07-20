@@ -137,8 +137,9 @@ class BaseService:
 
         # Handle regular Pydantic models
         if hasattr(response_model, "model_validate"):
-            # type: ignore[attr-defined]
-            return response_model.model_validate(response_data)
+            return response_model.model_validate(  # type: ignore[attr-defined]
+                response_data
+            )
 
         # For non-pydantic types, return as-is
         return response_data
@@ -178,8 +179,9 @@ class BaseService:
             if not isinstance(response_data, list):
                 raise ValueError(f"Expected list response, got {type(response_data)}")
 
-            # type: ignore[attr-defined]
-            return [item_model.model_validate(item) for item in response_data]
+            return [  # type: ignore[attr-defined]
+                item_model.model_validate(item) for item in response_data
+            ]
 
         except (HTTPError, AuthenticationError, RateLimitError):
             raise

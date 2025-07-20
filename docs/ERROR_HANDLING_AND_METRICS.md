@@ -7,7 +7,7 @@ This document describes the comprehensive error handling, structured logging, an
 The server provides three key operational features:
 
 1. **Standardized Exception Handling** - Consistent error types with structured context
-2. **Structured Logging** - JSON-formatted logs with rich context information  
+2. **Structured Logging** - JSON-formatted logs with rich context information
 3. **Optional Prometheus Metrics** - API latency, error rates, and operational metrics
 
 ## Error Handling
@@ -154,7 +154,7 @@ The server provides optional Prometheus metrics integration for monitoring:
 
 - **Request Latency**: HTTP request duration histograms
 - **Request Count**: Total HTTP requests by method, endpoint, and status
-- **Error Count**: Error occurrences by type and endpoint  
+- **Error Count**: Error occurrences by type and endpoint
 - **Active Connections**: Current WebSocket connection count
 - **Resource Updates**: Resource update events by type
 
@@ -193,7 +193,7 @@ mattermost_mcp_request_duration_seconds{method, endpoint, status_code}
 Tracks HTTP request duration with configurable buckets.
 
 #### Request Counter
-```prometheus  
+```prometheus
 mattermost_mcp_requests_total{method, endpoint, status_code}
 ```
 Total number of HTTP requests made to the Mattermost API.
@@ -307,23 +307,23 @@ async def example():
         mattermost_url="https://mattermost.example.com",
         mattermost_token="your-token",
     )
-    
+
     try:
         await server.start()
         print("Server started successfully")
-        
+
     except AuthenticationError as e:
         print(f"Authentication failed: {e}")
         print(f"Status code: {e.status_code}")
         print(f"Error context: {e.get_error_context()}")
-        
+
     except HTTPError as e:
         print(f"HTTP error: {e}")
         print(f"Error context: {e.get_error_context()}")
-        
+
     except Exception as e:
         print(f"Unexpected error: {e}")
-        
+
     finally:
         await server.stop()
 ```
@@ -337,7 +337,7 @@ async def example_with_metrics():
     # Measure operation duration
     async with measure_async_duration("user_operation", {"user_id": "123"}):
         await perform_user_operation()
-    
+
     # Record custom metrics
     metrics.record_resource_update("posts", "updated")
     metrics.record_error("ValidationError", "/api/v4/posts")
@@ -482,7 +482,7 @@ Create monitoring dashboards using the collected metrics:
       },
       {
         "title": "Error Rate",
-        "type": "graph", 
+        "type": "graph",
         "targets": [
           {
             "expr": "rate(mattermost_mcp_errors_total[5m])",

@@ -32,12 +32,7 @@ from .auth import (
 )
 
 # Base models and common types
-from .base import (
-    ErrorResponse,
-    MattermostBase,
-    MattermostResponse,
-    StatusOK,
-)
+from .base import ErrorResponse, MattermostBase, MattermostResponse, StatusOK
 
 # Channel models
 from .channels import (

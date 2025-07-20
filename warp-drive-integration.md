@@ -89,6 +89,7 @@ ENABLE_POLLING=true
 
 Add the following configuration to your Warp Drive `mcp_config.json` file:
 
+#### Basic Configuration
 ```json
 {
   "mcpServers": {
@@ -99,11 +100,7 @@ Add the following configuration to your Warp Drive `mcp_config.json` file:
         "MATTERMOST_URL": "https://your-mattermost-instance.com",
         "MATTERMOST_TOKEN": "your-bot-token-here",
         "MATTERMOST_TEAM_ID": "your-team-id",
-        "MCP_SERVER_HOST": "localhost",
-        "MCP_SERVER_PORT": "3000",
-        "LOG_LEVEL": "INFO",
-        "ENABLE_STREAMING": "true",
-        "ENABLE_POLLING": "true"
+        "LOG_LEVEL": "INFO"
       },
       "description": "Mattermost MCP server for team communication",
       "disabled": false
@@ -183,14 +180,14 @@ Add the following configuration to your Warp Drive `mcp_config.json` file:
    ```
 
 2. **Set up environment variables** (choose one):
-   
+
    **Option A: Using .env file**
    ```bash
    # Create .env file with your configuration
    cp .env.example .env
    # Edit .env with your actual values
    ```
-   
+
    **Option B: Export directly**
    ```bash
    export MATTERMOST_URL="https://your-team.mattermost.com"
@@ -202,6 +199,8 @@ Add the following configuration to your Warp Drive `mcp_config.json` file:
    ```bash
    python -m mcp_mattermost --help
    ```
+
+   The server supports both stdio mode (default for MCP integration) and direct server mode with multiple CLI options.
 
 4. **Add configuration to Warp Drive**:
    - Open Warp Drive IDE
@@ -228,6 +227,7 @@ To verify your setup is working correctly:
    - Open Warp Drive IDE
    - Check that the Mattermost MCP server appears in your MCP server list
    - Try using one of the tools (e.g., `send_message`) in a chat with an AI assistant
+   - The server automatically runs in stdio mode when launched by Warp Drive
 
 3. **Test Basic Operations**:
    ```python
@@ -246,7 +246,7 @@ To verify your setup is working correctly:
    ```bash
    # ✅ Correct
    MATTERMOST_URL=https://your-team.mattermost.com
-   
+
    # ❌ Incorrect
    MATTERMOST_URL=https://your-team.mattermost.com/
    ```
@@ -319,6 +319,113 @@ To verify your setup is working correctly:
 
 4. **Check server resources**: Monitor your Mattermost server's performance
 
+#### MCP Handshake Issues
+
+**Problem**: "MCP handshake failed" or "Server initialization timeout"
+
+**Solutions**:
+1. **Verify MCP server startup**: Ensure the server starts without errors
+   ```bash
+   # Test direct server startup
+   python -m mcp_mattermost --log-level DEBUG
+   ```
+
+2. **Check Warp Drive configuration**: Verify the JSON configuration is valid
+   ```json
+   {
+     "mcpServers": {
+       "mattermost": {
+         "command": "python",
+         "args": ["-m", "mcp_mattermost"],
+         "env": {
+           "MATTERMOST_URL": "https://your-instance.com",
+           "MATTERMOST_TOKEN": "your-token"
+         }
+       }
+     }
+   }
+   ```
+
+### Advanced Configuration with CLI Flags
+
+For advanced scenarios, you can pass CLI flags through the `args` parameter:
+
+```json
+{
+  "mcpServers": {
+    "mattermost": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_mattermost",
+        "--log-level", "DEBUG",
+        "--log-format", "json",
+        "--no-streaming",
+        "--polling-interval", "60.0"
+      ],
+      "env": {
+        "MATTERMOST_URL": "https://your-mattermost-instance.com",
+        "MATTERMOST_TOKEN": "your-bot-token-here",
+        "MATTERMOST_TEAM_ID": "your-team-id"
+      },
+      "description": "Mattermost MCP server with debug logging and polling-only mode",
+      "disabled": false
+    }
+  }
+}
+```
+
+#### Configuration for Troubleshooting
+
+When troubleshooting MCP handshake issues, use this minimal configuration:
+
+```json
+{
+  "mcpServers": {
+    "mattermost": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_mattermost",
+        "--log-level", "DEBUG",
+        "--no-streaming",
+        "--no-polling"
+      ],
+      "env": {
+        "MATTERMOST_URL": "https://your-mattermost-instance.com",
+        "MATTERMOST_TOKEN": "your-bot-token-here"
+      },
+      "description": "Minimal Mattermost MCP server for debugging",
+      "disabled": false
+    }
+  }
+}
+```
+
+3. **Authentication during handshake**: The server may require authentication before MCP handshake completes
+   - Ensure `MATTERMOST_URL` and `MATTERMOST_TOKEN` are correctly set
+   - Check that the bot token has necessary permissions
+   - Verify network connectivity to your Mattermost instance
+
+4. **Stdio communication issues**:
+   - Check that Python is in your system PATH
+   - Verify the `mcp_mattermost` module is installed correctly
+   - Test with: `python -c "import mcp_mattermost; print('OK')"`
+
+5. **Resource initialization timeout**:
+   - Increase timeout values if your Mattermost server is slow
+   - Disable streaming temporarily: `"args": ["-m", "mcp_mattermost", "--no-streaming"]`
+   - Test with minimal configuration first
+
+6. **Debug MCP communication**:
+   ```bash
+   # Enable verbose MCP debugging
+   export LOG_LEVEL=DEBUG
+
+   # Test MCP server standalone
+   echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-10-07", "capabilities": {}, "clientInfo": {"name": "test"}}}' | python -m mcp_mattermost
+   ```
+
 #### Debug Mode
 
 For additional troubleshooting, enable debug logging:
@@ -327,15 +434,17 @@ For additional troubleshooting, enable debug logging:
 # Enable debug logging
 export LOG_LEVEL=DEBUG
 
-# Run with verbose output
-python -m mcp_mattermost --verbose
+# Run with detailed output
+python -m mcp_mattermost --log-level DEBUG --log-format json
 ```
 
 This will provide detailed information about:
+- MCP protocol messages and handshake
 - API requests and responses
 - WebSocket connection status
 - Resource streaming events
 - Error stack traces
+- Tool execution details
 
 ### Support Resources
 
@@ -347,6 +456,51 @@ If you continue experiencing issues:
 4. **Create new issue**: Include debug logs and configuration details
 
 ## Additional Configuration Options
+
+### CLI Flags and Runtime Options
+
+The Mattermost MCP server supports several command-line flags for advanced configuration:
+
+#### Connection and Authentication Flags
+- `--mattermost-url URL`: Override Mattermost server URL
+- `--mattermost-token TOKEN`: Override API token
+- `--team-id ID`: Override team ID
+- `--webhook-secret SECRET`: Set webhook validation secret
+- `--ws-url URL`: Custom WebSocket URL for streaming
+- `--default-channel ID`: Default channel for operations
+
+#### Server Configuration Flags
+- `--host HOST`: Server bind address (default: localhost)
+- `--port PORT`: Server port (default: 8000)
+- `--log-level LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- `--log-format FORMAT`: Logging format (console or json)
+
+#### Feature Control Flags
+- `--no-streaming`: Disable WebSocket streaming
+- `--no-polling`: Disable REST API polling
+- `--polling-interval SECONDS`: Polling interval in seconds (default: 30.0)
+
+#### Example Advanced Usage:
+```bash
+# Disable streaming, use only polling with custom interval
+python -m mcp_mattermost --no-streaming --polling-interval 60.0
+
+# Debug mode with JSON logging
+python -m mcp_mattermost --log-level DEBUG --log-format json
+
+# Custom server configuration
+python -m mcp_mattermost --host 0.0.0.0 --port 3000
+```
+
+### Stdio Mode
+
+The server automatically runs in **stdio mode** when launched by Warp Drive IDE. This mode:
+- Communicates via JSON-RPC over stdin/stdout
+- Provides full MCP protocol compatibility
+- Handles resource streaming and tool execution
+- Supports real-time WebSocket events and polling fallback
+
+No special configuration is needed for stdio mode - it's enabled automatically when the server detects MCP client communication.
 
 For advanced users who need additional configuration beyond the standard Mattermost MCP setup above, the following options are available:
 
@@ -403,7 +557,7 @@ Monitor specific channels for important updates and react accordingly:
 After completing the Mattermost MCP setup:
 
 1. **Explore Documentation**: Review the [full documentation](docs/README.md) for advanced features
-2. **Try Examples**: Experiment with the [usage examples](examples/README.md) 
+2. **Try Examples**: Experiment with the [usage examples](examples/README.md)
 3. **Customize Configuration**: Adapt the setup for your team's specific needs
 4. **Monitor Performance**: Set up logging and monitoring for production use
 5. **Join the Community**: Contribute back with issues, feature requests, or improvements

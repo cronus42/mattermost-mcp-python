@@ -1,0 +1,87 @@
+{
+  "mcpServers": {
+    "mattermost-test": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_mattermost"
+      ],
+      "env": {
+        "MATTERMOST_URL": "https://mock-mattermost.example.com",
+        "MATTERMOST_TOKEN": "mock-test-token",
+        "MATTERMOST_TEAM_ID": "mock-team-id",
+        "LOG_LEVEL": "ERROR",
+        "ENABLE_STREAMING": "false",
+        "ENABLE_POLLING": "false"
+      },
+      "description": "Test Mattermost MCP server for integration testing",
+      "disabled": false
+    }
+  },
+  "resources": [
+    {
+      "uri": "mattermost://new_channel_posts",
+      "name": "Channel Posts Stream",
+      "description": "Stream of new posts from monitored channels"
+    },
+    {
+      "uri": "mattermost://reactions",
+      "name": "Message Reactions",
+      "description": "Stream of emoji reactions on posts"
+    }
+  ],
+  "tools": [
+    {
+      "name": "authenticate",
+      "description": "Authenticate with Mattermost server",
+      "parameters": {
+        "mattermost_url": {
+          "type": "string",
+          "description": "The Mattermost server URL"
+        },
+        "token": {
+          "type": "string",
+          "description": "The authentication token"
+        },
+        "team_id": {
+          "type": "string",
+          "description": "The team ID to scope operations to"
+        }
+      }
+    },
+    {
+      "name": "send_message",
+      "description": "Send a message to a Mattermost channel",
+      "parameters": {
+        "channel_id": {
+          "type": "string",
+          "description": "The channel ID to send the message to"
+        },
+        "message": {
+          "type": "string",
+          "description": "The message text to send"
+        },
+        "root_id": {
+          "type": "string",
+          "description": "Optional root post ID for threading",
+          "required": false
+        }
+      }
+    },
+    {
+      "name": "get_channel_history",
+      "description": "Retrieve message history from a channel",
+      "parameters": {
+        "channel_id": {
+          "type": "string",
+          "description": "The channel ID to get history from"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Number of messages to retrieve (default: 60)",
+          "required": false
+        }
+      }
+    }
+  ]
+}

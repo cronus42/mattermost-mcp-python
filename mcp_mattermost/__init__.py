@@ -12,8 +12,18 @@ __email__ = "your.email@example.com"
 # Optional imports to avoid dependency issues when just using models
 try:
     from .server import MattermostMCPServer
+    from .stdio_server import (
+        MattermostStdioServer,
+        create_stdio_server,
+        run_stdio_server,
+    )
 
-    __all__ = ["MattermostMCPServer"]
+    __all__ = [
+        "MattermostMCPServer",
+        "MattermostStdioServer",
+        "create_stdio_server",
+        "run_stdio_server",
+    ]
 except ImportError:
     # If server dependencies are not available, just export the models
     __all__ = []

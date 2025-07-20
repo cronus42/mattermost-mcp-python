@@ -614,3 +614,53 @@ async def _get_channel_members_tool(**kwargs):
 )
 async def _search_channels_tool(**kwargs):
     return await search_channels(**kwargs)
+
+
+# Team management functions
+
+
+async def list_teams(
+    services: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    List all teams that the current user has access to.
+
+    Args:
+        services: Service dependencies
+
+    Returns:
+        Dictionary containing list of teams with their IDs and names
+    """
+    if not services:
+        raise ValueError("Services not provided")
+
+    teams_service = services["teams"]
+    teams = await teams_service.get_teams()
+
+    return {
+        "teams": [
+            {
+                "team_id": team.id,
+                "name": team.name,
+                "display_name": team.display_name,
+                "type": team.type,
+                "description": team.description,
+                "create_at": team.create_at,
+                "update_at": team.update_at,
+            }
+            for team in teams
+        ]
+    }
+
+
+@mcp_tool(
+    name="list_teams",
+    description="List all teams that the current user has access to",
+    input_schema={
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+)
+async def _list_teams_tool(**kwargs):
+    return await list_teams(**kwargs)

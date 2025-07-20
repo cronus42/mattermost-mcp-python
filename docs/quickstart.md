@@ -65,11 +65,11 @@ mattermost_redis_1       docker-entrypoint.sh redis       Up (healthy)   6379/tc
    ```bash
    # Access Mattermost container
    docker-compose exec mattermost bash
-   
+
    # Create a bot user (replace with your details)
    ./bin/mmctl auth login http://localhost:8065 --name local --username admin --password yourpassword
    ./bin/mmctl bot create mcp-bot --display-name "MCP Bot" --description "MCP integration bot"
-   
+
    # Note the token from the output
    ```
 

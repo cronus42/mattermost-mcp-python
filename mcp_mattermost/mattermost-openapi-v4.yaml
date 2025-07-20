@@ -6708,7 +6708,7 @@ paths:
           in: path
           description: The name of the preference
           required: true
-          type: string        
+          type: string
       responses:
         '200':
           description: |
@@ -9562,7 +9562,7 @@ paths:
         - OAuth
       summary: Delete an OAuth app
       description: |
-        Delete and unregister an OAuth 2.0 client application 
+        Delete and unregister an OAuth 2.0 client application
         ##### Permissions
         If app creator, must have `mange_oauth` permission otherwise `manage_system_wide_oauth` permission is required.
       parameters:
@@ -10728,7 +10728,7 @@ paths:
               cancelled:
                 type: boolean
                 description: Set to true if the dialog was cancelled
-                
+
       responses:
         '200':
           description: Dialog submission successful
@@ -10828,7 +10828,7 @@ paths:
       description: |
         Partially update a bot by providing only the fields you want to update. Omitted fields will not be updated. The fields that can be updated are defined in the request body, all other provided fields will be ignored.
         ##### Permissions
-        Must have `manage_bots` permission. 
+        Must have `manage_bots` permission.
         __Minimum server version__: 5.10
       parameters:
         - name: bot_user_id
@@ -10901,7 +10901,7 @@ paths:
       description: |
         Disable a bot.
         ##### Permissions
-        Must have `manage_bots` permission. 
+        Must have `manage_bots` permission.
         __Minimum server version__: 5.10
       parameters:
         - name: bot_user_id
@@ -10929,7 +10929,7 @@ paths:
       description: |
         Enable a bot.
         ##### Permissions
-        Must have `manage_bots` permission. 
+        Must have `manage_bots` permission.
         __Minimum server version__: 5.10
       parameters:
         - name: bot_user_id
@@ -10957,7 +10957,7 @@ paths:
       description: |
         Assign a bot to a specified user.
         ##### Permissions
-        Must have `manage_bots` permission. 
+        Must have `manage_bots` permission.
         __Minimum server version__: 5.10
       parameters:
         - name: bot_user_id
@@ -13522,4 +13522,3 @@ definitions:
 externalDocs:
   description: Find out more about Mattermost
   url: 'https://about.mattermost.com'
-

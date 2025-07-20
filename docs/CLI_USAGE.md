@@ -43,11 +43,11 @@ These can be provided via:
 ### Command-Line Arguments
 
 ```
-usage: __main__.py [-h] [--mattermost-url MATTERMOST_URL] 
-                   [--mattermost-token MATTERMOST_TOKEN] [--team-id TEAM_ID] 
+usage: __main__.py [-h] [--mattermost-url MATTERMOST_URL]
+                   [--mattermost-token MATTERMOST_TOKEN] [--team-id TEAM_ID]
                    [--webhook-secret WEBHOOK_SECRET] [--ws-url WS_URL]
-                   [--default-channel DEFAULT_CHANNEL] [--host HOST] [--port PORT] 
-                   [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}] 
+                   [--default-channel DEFAULT_CHANNEL] [--host HOST] [--port PORT]
+                   [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
                    [--log-format {console,json}] [--no-streaming] [--no-polling]
                    [--polling-interval POLLING_INTERVAL]
 

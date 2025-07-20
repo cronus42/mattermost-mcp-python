@@ -5,7 +5,7 @@ Complete reference for all available MCP tools in Mattermost MCP Python.
 ## Tool Categories
 
 - 💬 **[Messaging Tools](#messaging-tools)** - Send messages, replies, reactions
-- 🏗️ **[Channel Tools](#channel-tools)** - Manage channels and memberships  
+- 🏗️ **[Channel Tools](#channel-tools)** - Manage channels and memberships
 - 👥 **[User Tools](#user-tools)** - User management and profiles
 - 📁 **[File Tools](#file-tools)** - File operations and attachments
 - ⚙️ **[Admin Tools](#admin-tools)** - System administration
@@ -105,7 +105,7 @@ Retrieve message history for a channel.
 **Example:**
 ```json
 {
-  "tool": "get_channel_history", 
+  "tool": "get_channel_history",
   "arguments": {
     "channel_id": "4yca9c7c3jbg5rqwx8xbwxxx",
     "per_page": 20,
@@ -337,7 +337,7 @@ Get user information.
 **Parameters:**
 - `user_id` (required): User ID to get info for
 
-### get_me  
+### get_me
 
 Get current bot user information.
 
@@ -432,7 +432,7 @@ Get server configuration (admin only).
 
 ---
 
-## 📊 Monitoring Tools  
+## 📊 Monitoring Tools
 
 ### health_check
 
@@ -512,13 +512,13 @@ async def send_daily_report():
             "channel_id": "general_channel_id",
             "message": "📊 Daily standup starting in 5 minutes!"
         })
-        
+
         # Get recent channel activity
         history = await client.call_tool("get_channel_history", {
             "channel_id": "general_channel_id",
             "per_page": 10
         })
-        
+
         # React to important messages
         for post in history["posts"][:3]:
             await client.call_tool("add_reaction", {
@@ -551,7 +551,7 @@ curl -X POST http://localhost:3000/mcp \
 curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -d '{
-    "method": "tools/call", 
+    "method": "tools/call",
     "params": {
       "name": "list_channels",
       "arguments": {
@@ -564,7 +564,7 @@ curl -X POST http://localhost:3000/mcp \
 ## Best Practices
 
 1. **Error Handling**: Always handle errors gracefully
-2. **Rate Limiting**: Respect API rate limits  
+2. **Rate Limiting**: Respect API rate limits
 3. **Batch Operations**: Use bulk operations when available
 4. **Caching**: Cache frequently accessed data
 5. **Logging**: Include correlation IDs for tracing

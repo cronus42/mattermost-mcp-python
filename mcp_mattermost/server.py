@@ -65,9 +65,9 @@ class MattermostMCPServer:
         self.resource_registry = MCPResourceRegistry()
 
         # Resource update callback
-        self._resource_update_callback: Optional[Callable[[ResourceUpdate], None]] = (
-            None
-        )
+        self._resource_update_callback: Optional[
+            Callable[[ResourceUpdate], None]
+        ] = None
 
         # WebSocket client for streaming
         self.websocket_client: Optional[MattermostWebSocketClient] = None
@@ -78,6 +78,12 @@ class MattermostMCPServer:
 
         # Initialize resources
         self._initialize_resources()
+
+        # Register authentication callback for reconnecting WebSocket
+        from .auth import get_auth_state
+
+        auth_state = get_auth_state()
+        auth_state.add_auth_callback(self._reconnect_websocket_client)
 
         logger.info(
             "Initializing Mattermost MCP server",
@@ -234,12 +240,18 @@ class MattermostMCPServer:
         Get the list of available MCP resources.
 
         Returns:
-            List of resource definitions
+            List of resource definitions in MCP format
         """
-        return [
-            resource.model_dump()
-            for resource in self.resource_registry.list_resources()
-        ]
+        mcp_resources = self.resource_registry.list_mcp_resources()
+        # Serialize properly, ensuring URI is converted to string
+        serialized_resources = []
+        for resource in mcp_resources:
+            resource_dict = resource.model_dump()
+            # Convert AnyUrl to string
+            if "uri" in resource_dict:
+                resource_dict["uri"] = str(resource_dict["uri"])
+            serialized_resources.append(resource_dict)
+        return serialized_resources
 
     async def read_resource(self, uri: str, **kwargs) -> Dict[str, Any]:
         """
@@ -258,6 +270,66 @@ class MattermostMCPServer:
 
         return await resource.read(uri, **kwargs)
 
+    async def _reconnect_websocket_client(self, auth_state) -> None:
+        """Reconnect WebSocket client following successful authentication."""
+        if self.websocket_client:
+            logger.info("Disconnecting existing WebSocket client for reconnection")
+            await self.websocket_client.disconnect()
+            self.websocket_client = None
+
+        # Only reconnect if streaming is enabled
+        if not self.enable_streaming:
+            logger.info("WebSocket streaming is disabled, skipping reconnection")
+            return
+
+        logger.info("Reconnecting WebSocket client", url=auth_state.mattermost_url)
+
+        if not auth_state.mattermost_url or not auth_state.token:
+            raise ValueError("Missing Mattermost URL or token for WebSocket connection")
+
+        self.websocket_client = MattermostWebSocketClient(
+            mattermost_url=auth_state.mattermost_url,
+            token=auth_state.token,
+            auto_reconnect=True,
+            reconnect_delay=5.0,
+            max_reconnect_attempts=10,
+        )
+
+        # Register WebSocket client with resources that support streaming
+        streaming_resources = self.resource_registry.get_streaming_resources()
+        for resource in streaming_resources:
+            if hasattr(resource, "set_websocket_client"):
+                resource.set_websocket_client(self.websocket_client)
+
+        try:
+            # Connect to WebSocket
+            await self.websocket_client.connect()
+
+            # Wait a moment to ensure connection is established
+            await asyncio.sleep(1.0)
+
+            if not self.websocket_client.is_connected:
+                # Update connection metrics
+                metrics.set_active_connections(0)
+                logger.error("Failed to re-establish WebSocket connection")
+                raise RuntimeError("Failed to re-establish WebSocket connection")
+
+            # Update connection metrics
+            metrics.set_active_connections(1)
+
+            logger.info("WebSocket client reconnected and authenticated")
+
+        except Exception as e:
+            logger.error(
+                "Failed to reconnect WebSocket client", error=str(e), exc_info=True
+            )
+            # Don't fail the authentication if WebSocket reconnection fails
+            # The client can still use the API without streaming
+            if self.websocket_client:
+                await self.websocket_client.disconnect()
+                self.websocket_client = None
+            metrics.set_active_connections(0)
+
     async def _initialize_websocket_client(self) -> None:
         """Initialize and connect WebSocket client."""
         if self.websocket_client:
@@ -273,6 +345,9 @@ class MattermostMCPServer:
             return
 
         logger.info("Initializing WebSocket client", url=auth_state.mattermost_url)
+
+        if not auth_state.mattermost_url or not auth_state.token:
+            raise ValueError("Missing Mattermost URL or token for WebSocket connection")
 
         self.websocket_client = MattermostWebSocketClient(
             mattermost_url=auth_state.mattermost_url,

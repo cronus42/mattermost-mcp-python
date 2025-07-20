@@ -163,6 +163,11 @@ class ReactionResource(BaseMCPResource):
 
         logger.info("Starting WebSocket streaming for reactions")
 
+        if not auth_state.mattermost_url or not auth_state.token:
+            raise MattermostAPIError(
+                "Missing Mattermost URL or token for WebSocket connection"
+            )
+
         self._ws_client = MattermostWebSocketClient(
             auth_state.mattermost_url, auth_state.token, auto_reconnect=True
         )

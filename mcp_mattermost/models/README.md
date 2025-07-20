@@ -8,7 +8,7 @@ The models are organized into several modules based on functionality:
 
 - **`base.py`** - Base classes and common response types
 - **`users.py`** - User entities and authentication
-- **`teams.py`** - Team entities and memberships  
+- **`teams.py`** - Team entities and memberships
 - **`channels.py`** - Channel entities and memberships
 - **`posts.py`** - Posts, reactions, and file attachments
 - **`auth.py`** - Authentication, sessions, and tokens

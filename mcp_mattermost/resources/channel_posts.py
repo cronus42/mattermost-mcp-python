@@ -133,6 +133,11 @@ class NewChannelPostResource(BaseMCPResource):
         auth_state = get_auth_state()
         auth_state.require_authentication()
 
+        if not auth_state.mattermost_url or not auth_state.token:
+            raise MattermostAPIError(
+                "Missing Mattermost URL or token for WebSocket connection"
+            )
+
         self._ws_client = MattermostWebSocketClient(
             auth_state.mattermost_url, auth_state.token, auto_reconnect=True
         )

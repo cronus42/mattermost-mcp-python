@@ -16,11 +16,7 @@ import httpx
 import structlog
 
 from ..metrics import metrics
-from .exceptions import (
-    AuthenticationError,
-    HTTPError,
-    RateLimitError,
-)
+from .exceptions import AuthenticationError, HTTPError, RateLimitError
 
 logger = structlog.get_logger(__name__)
 

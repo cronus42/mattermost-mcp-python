@@ -67,9 +67,9 @@ async def setup_project_channel():
             "type": "P",  # Private channel
             "purpose": "Project Alpha development discussions"
         })
-        
+
         channel_id = channel["channel_id"]
-        
+
         # Add team members
         user_ids = ["user1", "user2", "user3"]
         for user_id in user_ids:
@@ -77,13 +77,13 @@ async def setup_project_channel():
                 "channel_id": channel_id,
                 "user_id": user_id
             })
-        
+
         # Send welcome message
         await client.call_tool("send_message", {
             "channel_id": channel_id,
             "message": "🎉 Welcome to Project Alpha! Let's build something amazing."
         })
-        
+
         return channel_id
 ```
 
@@ -97,7 +97,7 @@ async def monitor_channel():
             "channel_id": "your-channel-id",
             "per_page": 10
         })
-        
+
         # React to messages containing "help"
         for post in history["posts"]:
             if "help" in post["message"].lower():
@@ -106,7 +106,7 @@ async def monitor_channel():
                     "emoji_name": "question",
                     "user_id": "bot-user-id"
                 })
-                
+
                 # Reply with helpful information
                 await client.call_tool("reply_to_thread", {
                     "root_post_id": post["post_id"],
@@ -124,14 +124,14 @@ async def upload_and_share_file():
         # Read and encode file
         with open("report.pdf", "rb") as f:
             file_data = base64.b64encode(f.read()).decode()
-        
+
         # Upload file
         file_info = await client.call_tool("upload_file", {
             "channel_id": "your-channel-id",
             "file_data": file_data,
             "filename": "monthly_report.pdf"
         })
-        
+
         # Share file with message
         await client.call_tool("send_message", {
             "channel_id": "your-channel-id",
@@ -171,7 +171,7 @@ const { MCPClient } = require('mcp-client');
 
 async function sendMessage() {
     const client = new MCPClient('http://localhost:3000');
-    
+
     try {
         const result = await client.callTool('send_message', {
             channel_id: 'your-channel-id',
@@ -197,7 +197,7 @@ curl -X POST http://localhost:3000/mcp \
   -d '{
     "method": "tools/call",
     "params": {
-      "name": "send_message", 
+      "name": "send_message",
       "arguments": {
         "channel_id": "your-channel-id",
         "message": "Hello from curl!"
@@ -239,7 +239,7 @@ async def handle_webhook(payload: dict):
                 "emoji_name": "thumbsup",
                 "user_id": "bot-user-id"
             })
-    
+
     return {"status": "ok"}
 ```
 
@@ -257,14 +257,14 @@ def send_notification():
     data = request.json
     message = data.get('message', 'No message provided')
     channel_id = data.get('channel_id')
-    
+
     async def send():
         async with MCPClient("http://localhost:3000") as client:
             return await client.call_tool("send_message", {
                 "channel_id": channel_id,
                 "message": f"🔔 Notification: {message}"
             })
-    
+
     result = asyncio.run(send())
     return {"success": True, "post_id": result["post_id"]}
 ```
@@ -308,10 +308,10 @@ async def process_multiple_channels():
         channels = await client.call_tool("list_channels", {
             "team_id": "your-team-id"
         })
-        
+
         # Send announcement to all channels
         message = "📢 Important announcement: System maintenance tonight at 10 PM"
-        
+
         for channel in channels["channels"]:
             if channel["type"] == "O":  # Only public channels
                 try:

@@ -5,13 +5,15 @@ Main entry point for the Mattermost MCP server.
 import argparse
 import asyncio
 import os
+import signal
 import sys
 from typing import Optional
 
 import structlog
 from dotenv import load_dotenv
 
-from .server import MattermostMCPServer
+# from .server import MattermostMCPServer  # Keep for future use
+from .stdio_server import MattermostStdioServer
 
 # Load environment variables
 load_dotenv()
@@ -43,7 +45,7 @@ def configure_logging(log_format: str = "console", log_level: str = "INFO") -> N
         processors.append(structlog.dev.ConsoleRenderer())
 
     structlog.configure(
-        processors=processors,  # type: ignore[arg-type]
+        processors=processors,
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
@@ -237,6 +239,30 @@ def get_config_from_env_and_args(args: argparse.Namespace) -> ServerConfig:
 
 async def async_main() -> None:
     """Async main entry point."""
+    stdio_server = None
+
+    # Set up signal handling for graceful shutdown
+    shutdown_event = asyncio.Event()
+
+    def handle_shutdown_signal():
+        """Handle shutdown signals."""
+        logger.info("Received shutdown signal")
+        shutdown_event.set()
+
+    # Register signal handlers
+    try:
+        # Try to add signal handlers (may fail in some environments like Windows)
+        loop = asyncio.get_event_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            try:
+                loop.add_signal_handler(sig, handle_shutdown_signal)
+            except (NotImplementedError, OSError):
+                # Signal handling not supported (e.g., Windows)
+                pass
+    except Exception:
+        # Signal handling setup failed, we'll rely on KeyboardInterrupt
+        pass
+
     try:
         # Parse command-line arguments
         args = parse_args()
@@ -248,14 +274,12 @@ async def async_main() -> None:
         configure_logging(config.log_format, config.log_level)
 
         logger.info(
-            "Starting Mattermost MCP server with configuration",
+            "Starting Mattermost MCP stdio server with configuration",
             mattermost_url=config.mattermost_url,
             team_id=config.team_id,
             webhook_secret_set=bool(config.webhook_secret),
             ws_url=config.ws_url,
             default_channel=config.default_channel,
-            host=config.host,
-            port=config.port,
             streaming_enabled=config.enable_streaming,
             polling_enabled=config.enable_polling,
             polling_interval=config.polling_interval,
@@ -272,8 +296,8 @@ async def async_main() -> None:
                 team_id=config.team_id,
             )
 
-        # Create and start the server
-        server = MattermostMCPServer(
+        # Create the stdio MCP server wrapper
+        stdio_server = MattermostStdioServer(
             team_id=config.team_id,
             enable_streaming=config.enable_streaming,
             enable_polling=config.enable_polling,
@@ -283,21 +307,48 @@ async def async_main() -> None:
             default_channel=config.default_channel,
         )
 
-        logger.info("Starting Mattermost MCP server")
-        await server.start()
+        logger.info("Starting Mattermost MCP stdio server")
 
-        # Keep the server running
+        # Create tasks for server and shutdown monitoring
+        server_task = asyncio.create_task(stdio_server.run())
+        shutdown_task = asyncio.create_task(shutdown_event.wait())
+
+        # Wait for either server completion or shutdown signal
         try:
-            while True:
-                await asyncio.sleep(1)
+            done, pending = await asyncio.wait(
+                [server_task, shutdown_task], return_when=asyncio.FIRST_COMPLETED
+            )
+
+            # Cancel any remaining tasks
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+            # Check if server task completed with an exception
+            if server_task in done:
+                try:
+                    await server_task  # Re-raise any exception
+                except Exception as e:
+                    logger.error("Server task failed", error=str(e), exc_info=True)
+                    raise
+
         except KeyboardInterrupt:
-            logger.info("Received shutdown signal")
-        finally:
-            await server.stop()
+            logger.info("Received keyboard interrupt")
 
     except Exception as e:
         logger.error("Failed to start server", error=str(e), exc_info=True)
         sys.exit(1)
+    finally:
+        # Graceful shutdown
+        if stdio_server and stdio_server.is_running:
+            logger.info("Shutting down stdio server")
+            try:
+                await stdio_server._cleanup()
+            except Exception as e:
+                logger.error("Error during shutdown", error=str(e), exc_info=True)
 
 
 def main() -> None:

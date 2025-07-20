@@ -78,7 +78,7 @@ python -m mcp_mattermost
 
 ### 🔧 **Domain Services**
 - **UsersService**: User management, authentication, search, and profiles
-- **TeamsService**: Team operations, membership management, and invitations  
+- **TeamsService**: Team operations, membership management, and invitations
 - **ChannelsService**: Channel CRUD, membership, and statistics
 - **PostsService**: Post creation, editing, search, reactions, and threads
 - **FilesService**: File upload, download, metadata, and attachment management
@@ -174,7 +174,7 @@ pip install mattermost-mcp-python
 
 # Set environment variables
 export MATTERMOST_URL="https://your-mattermost.com"
-export MATTERMOST_TOKEN="your-bot-token" 
+export MATTERMOST_TOKEN="your-bot-token"
 export MATTERMOST_TEAM_ID="your-team-id"
 
 # Run the server
@@ -187,12 +187,12 @@ MCP tools for Mattermost integration:
 
 ### 💬 Messaging
 - `send_message` - Send messages to channels
-- `reply_to_thread` - Reply to message threads  
+- `reply_to_thread` - Reply to message threads
 - `get_channel_history` - Retrieve message history
 - `add_reaction` / `remove_reaction` - Emoji reactions
 - `pin_message` / `unpin_message` - Pin important messages
 
-### 🏗️ Channel Management  
+### 🏗️ Channel Management
 - `list_channels` - List team channels
 - `create_channel` - Create new channels
 - `add_user_to_channel` - Manage channel membership
@@ -237,19 +237,19 @@ async def setup_project():
         # Create private channel
         channel = await client.call_tool("create_channel", {
             "team_id": "your-team-id",
-            "name": "project-alpha", 
+            "name": "project-alpha",
             "display_name": "Project Alpha",
             "type": "P",  # Private
             "purpose": "Alpha project discussions"
         })
-        
+
         # Add team members
         for user_id in ["user1", "user2", "user3"]:
             await client.call_tool("add_user_to_channel", {
                 "channel_id": channel["channel_id"],
                 "user_id": user_id
             })
-        
+
         # Welcome message
         await client.call_tool("send_message", {
             "channel_id": channel["channel_id"],
@@ -278,7 +278,7 @@ async def monitor_activity():
 ## 🎯 Use Cases
 
 - **🤖 Chatbots & AI Assistants** - Build conversational interfaces
-- **📢 Notifications & Alerts** - Automated system notifications  
+- **📢 Notifications & Alerts** - Automated system notifications
 - **🔄 Workflow Automation** - Process automation with Mattermost
 - **📊 Monitoring Dashboards** - Real-time activity monitoring
 - **🔗 System Integration** - Connect external services
@@ -292,7 +292,7 @@ graph TB
     Client[AI Assistant/App] --> MCP[MCP Protocol]
     MCP --> Server[MCP Mattermost Server]
     Server --> Tools[Tool Registry]
-    Server --> Resources[Resource Registry] 
+    Server --> Resources[Resource Registry]
     Tools --> Services[Domain Services]
     Resources --> WebSocket[WebSocket Client]
     Services --> HTTP[HTTP Client]

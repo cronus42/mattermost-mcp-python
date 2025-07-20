@@ -5,7 +5,7 @@ Complete guide to configuring Mattermost MCP Python for different environments a
 ## Configuration Methods
 
 1. **[Environment Variables](#environment-variables)** - Recommended for most deployments
-2. **[Configuration Files](#configuration-files)** - For complex configurations  
+2. **[Configuration Files](#configuration-files)** - For complex configurations
 3. **[Command Line Arguments](#command-line-arguments)** - For development and testing
 4. **[Docker Configuration](#docker-configuration)** - For containerized deployments
 
@@ -50,7 +50,7 @@ WS_URL=wss://your-mattermost.com/api/v4/websocket  # Custom WebSocket URL
 WS_RECONNECT_INTERVAL=5           # Reconnection interval in seconds
 WS_MAX_RECONNECT_ATTEMPTS=10      # Maximum reconnection attempts
 
-# Polling Configuration  
+# Polling Configuration
 ENABLE_POLLING=true               # Enable REST API polling fallback
 POLLING_INTERVAL=30               # Polling interval in seconds
 POLLING_BATCH_SIZE=100           # Number of items per poll
@@ -62,7 +62,7 @@ ALLOWED_USERS=user1,user2,user3              # Comma-separated user IDs
 MONITOR_ALL_CHANNELS=false                    # Monitor all accessible channels
 
 # Caching
-ENABLE_CACHING=true              # Enable in-memory caching  
+ENABLE_CACHING=true              # Enable in-memory caching
 CACHE_TTL=300                    # Cache TTL in seconds
 CACHE_MAX_SIZE=1000              # Maximum cache entries
 
@@ -123,7 +123,7 @@ server:
   host: "0.0.0.0"
   port: 3000
   name: "Mattermost MCP Server"
-  
+
 # HTTP Client
 http:
   timeout: 30
@@ -134,7 +134,7 @@ http:
     requests_per_second: 10
     burst_size: 20
 
-# WebSocket  
+# WebSocket
 websocket:
   enabled: true
   url: null  # Auto-derive from mattermost.url
@@ -165,7 +165,7 @@ logging:
   level: "INFO"
   format: "json"
   file: "/var/log/mcp/server.log"
-  
+
 # Security
 security:
   webhook_secret: "${WEBHOOK_SECRET}"
@@ -240,7 +240,7 @@ Create `config.json`:
 # Start with YAML config
 python -m mcp_mattermost --config config.yaml
 
-# Start with JSON config  
+# Start with JSON config
 python -m mcp_mattermost --config config.json
 
 # Environment variables override config file values
@@ -295,7 +295,7 @@ Options:
   --log-level [DEBUG|INFO|WARNING|ERROR|CRITICAL]
   --log-format [json|text]       Log format [default: json]
   --enable-websocket / --disable-websocket
-  --enable-polling / --disable-polling  
+  --enable-polling / --disable-polling
   --rate-limit INTEGER           Requests per second limit
   --timeout INTEGER              HTTP timeout in seconds
   --max-retries INTEGER          Maximum retry attempts
@@ -345,12 +345,12 @@ services:
       - MCP_SERVER_HOST=0.0.0.0
       - MCP_SERVER_PORT=3000
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      
+
       # Advanced configuration
       - ENABLE_WEBSOCKET=${ENABLE_WEBSOCKET:-true}
       - ENABLE_METRICS=${ENABLE_METRICS:-true}
       - RATE_LIMIT_REQUESTS_PER_SECOND=${RATE_LIMIT:-10}
-      
+
     ports:
       - "${MCP_SERVER_PORT:-3000}:3000"
     volumes:
@@ -416,7 +416,7 @@ DEFAULT_CHANNEL_ID=${TEST_CHANNEL_ID}
 ### Staging
 
 ```bash
-# .env.staging  
+# .env.staging
 MATTERMOST_URL=https://staging-mattermost.company.com
 LOG_LEVEL=INFO
 LOG_FORMAT=json
@@ -481,7 +481,7 @@ data:
       url: "https://mattermost.company.com"
       verify_ssl: true
     server:
-      host: "0.0.0.0" 
+      host: "0.0.0.0"
       port: 3000
     http:
       timeout: 30

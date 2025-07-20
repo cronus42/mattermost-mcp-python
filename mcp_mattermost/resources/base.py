@@ -14,6 +14,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
 
 import structlog
+from mcp.types import Resource
 from pydantic import BaseModel, Field
 
 logger = structlog.get_logger(__name__)
@@ -260,6 +261,20 @@ class MCPResourceRegistry:
     def list_resources(self) -> List[MCPResourceDefinition]:
         """List all registered resources."""
         return [resource.get_definition() for resource in self._resources.values()]
+
+    def list_mcp_resources(self) -> List[Resource]:
+        """List all resources in MCP Resource format."""
+        mcp_resources = []
+        for resource in self._resources.values():
+            definition = resource.get_definition()
+            mcp_resource = Resource(
+                uri=definition.uri,
+                name=definition.name,
+                description=definition.description,
+                mimeType=definition.mime_type,
+            )
+            mcp_resources.append(mcp_resource)
+        return mcp_resources
 
     def get_streaming_resources(self) -> List[BaseMCPResource]:
         """Get all resources that support streaming."""

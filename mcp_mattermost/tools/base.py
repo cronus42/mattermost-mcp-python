@@ -37,6 +37,7 @@ class MCPToolRegistry:
 
     def __init__(self):
         self._tools: Dict[str, MCPToolDefinition] = {}
+        self._services: Dict[str, Any] = {}
         self.logger = logger.bind(component="tool_registry")
 
     def register(self, tool: MCPToolDefinition) -> None:
@@ -48,14 +49,25 @@ class MCPToolRegistry:
         """Get a tool definition by name."""
         return self._tools.get(name)
 
-    def list_tools(self) -> List[Dict[str, Any]]:
+    def set_services(self, services: Dict[str, Any]) -> None:
+        """Set service dependencies for tools."""
+        self._services = services
+        self.logger.info("Services registered", services=list(services.keys()))
+
+    def get_services(self) -> Dict[str, Any]:
+        """Get the current services."""
+        return self._services
+
+    def list_tools(self) -> List[Any]:
         """Get all tool definitions for MCP protocol."""
+        from mcp.types import Tool
+
         return [
-            {
-                "name": tool.name,
-                "description": tool.description,
-                "input_schema": tool.input_schema,
-            }
+            Tool(
+                name=tool.name,
+                description=tool.description,
+                inputSchema=tool.input_schema,
+            )
             for tool in self._tools.values()
         ]
 
@@ -67,6 +79,10 @@ class MCPToolRegistry:
 
         try:
             self.logger.info("Calling tool", name=name, arguments=arguments)
+
+            # Inject services into the arguments if available
+            if self._services:
+                arguments = {**arguments, "services": self._services}
 
             # Check if the handler is a coroutine function
             if asyncio.iscoroutinefunction(tool.handler):

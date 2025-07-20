@@ -130,15 +130,15 @@ class MCPToolDefinition:
     name: str
     description: str
     input_schema: dict
-    
+
 class BaseMCPTool(ABC):
     """Abstract base class for MCP tools."""
-    
+
     @abstractmethod
     async def execute(self, **kwargs) -> dict:
         """Execute the tool with given parameters."""
         pass
-    
+
     @abstractmethod
     def get_definition(self) -> MCPToolDefinition:
         """Get the tool's MCP definition."""
@@ -149,12 +149,12 @@ class BaseMCPTool(ABC):
 ```python
 class BaseMCPResource(ABC):
     """Abstract base class for MCP resources."""
-    
+
     @abstractmethod
     async def read(self, uri: str) -> dict:
         """Read resource data by URI."""
         pass
-    
+
     @abstractmethod
     def list_resources(self) -> List[dict]:
         """List available resources."""
@@ -166,7 +166,7 @@ The main server class integrates MCP protocol handling with Mattermost-specific 
 ```python
 class MattermostMCPServer:
     """Main MCP server for Mattermost integration."""
-    
+
     def __init__(self, config: MattermostConfig):
         self.api_client = MattermostAPIClient(config)
         self.tool_registry = MCPToolRegistry()

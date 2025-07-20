@@ -23,7 +23,7 @@ graph TB
             RESOURCES[Resource Registry]
             SERVER[MCP Server Core]
         end
-        
+
         subgraph "Service Layer"
             USERS[Users Service]
             TEAMS[Teams Service]
@@ -31,7 +31,7 @@ graph TB
             POSTS[Posts Service]
             FILES[Files Service]
         end
-        
+
         subgraph "Infrastructure Layer"
             HTTP[HTTP Client]
             WS[WebSocket Client]
@@ -46,7 +46,7 @@ graph TB
             WSS[WebSocket API]
             WEBHOOKS[Webhooks]
         end
-        
+
         subgraph "Data Layer"
             DB[(PostgreSQL)]
             FILES_STORE[File Storage]
@@ -58,11 +58,11 @@ graph TB
     AI --> CLIENT
     APP --> CLIENT
     CLI --> CLIENT
-    
+
     %% MCP Protocol
     CLIENT <--> PROTOCOL
     PROTOCOL <--> SERVER
-    
+
     %% Internal connections
     SERVER --> TOOLS
     SERVER --> RESOURCES
@@ -71,34 +71,34 @@ graph TB
     TOOLS --> CHANNELS
     TOOLS --> POSTS
     TOOLS --> FILES
-    
+
     %% Service to infrastructure
     USERS --> HTTP
     TEAMS --> HTTP
     CHANNELS --> HTTP
     POSTS --> HTTP
     FILES --> HTTP
-    
+
     RESOURCES --> WS
     HTTP --> CACHE
     WS --> METRICS
-    
+
     %% External connections
     HTTP <--> API
     WS <--> WSS
     SERVER <--> WEBHOOKS
-    
+
     API --> DB
     API --> FILES_STORE
     API --> SEARCH
     WSS --> DB
-    
+
     classDef client fill:#e1f5fe
     classDef mcp fill:#f3e5f5
     classDef service fill:#e8f5e8
     classDef infra fill:#fff3e0
     classDef external fill:#ffebee
-    
+
     class AI,APP,CLI client
     class CLIENT,PROTOCOL,SERVER,TOOLS,RESOURCES mcp
     class USERS,TEAMS,CHANNELS,POSTS,FILES service
@@ -198,7 +198,7 @@ class PostsService:
 
 #### HTTP Client
 - **Async HTTP client** with automatic retry logic
-- **Rate limiting** with token bucket algorithm  
+- **Rate limiting** with token bucket algorithm
 - **Circuit breaker** pattern for fault tolerance
 - **Request/response logging** with correlation tracking
 - **SSL/TLS support** with certificate validation
@@ -239,7 +239,7 @@ client = AsyncHTTPClient(
 
 ```
 1. Client Request → MCP Server
-2. Server validates request → Tool Registry  
+2. Server validates request → Tool Registry
 3. Tool Registry routes → Specific Tool
 4. Tool calls → Service Layer
 5. Service makes → HTTP API Call
@@ -251,7 +251,7 @@ client = AsyncHTTPClient(
 
 ```
 1. Resource Registration → Server startup
-2. WebSocket Connection → Mattermost  
+2. WebSocket Connection → Mattermost
 3. Event Received → WebSocket Client
 4. Event Filtered → Resource Registry
 5. Resource Update → Subscribers
@@ -311,7 +311,7 @@ GET /health
   "status": "healthy",
   "components": {
     "mattermost_api": "ok",
-    "websocket": "ok", 
+    "websocket": "ok",
     "cache": "ok",
     "database": "ok"
   }
@@ -374,7 +374,7 @@ ENABLE_METRICS=true
 ```
 mcp_mattermost/
 ├── api/              # HTTP client and API wrappers
-├── models/           # Pydantic data models  
+├── models/           # Pydantic data models
 ├── services/         # Business logic layer
 ├── tools/            # MCP tool implementations
 ├── resources/        # MCP resource implementations
@@ -384,7 +384,7 @@ mcp_mattermost/
 
 ### Extension Points
 - **Custom Tools**: Add new MCP tools
-- **Custom Resources**: Add new streaming resources  
+- **Custom Resources**: Add new streaming resources
 - **Service Extensions**: Extend existing services
 - **Middleware**: Add request/response middleware
 

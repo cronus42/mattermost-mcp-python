@@ -29,7 +29,7 @@ async def main():
         # GET request
         user_info = await client.get("/users/me")
         print(f"User: {user_info['username']}")
-        
+
         # POST request with JSON
         new_post = await client.post("/posts", json={
             "channel_id": "channel-id",
@@ -189,7 +189,7 @@ Uses exponential backoff: `wait_time = retry_backoff_factor * (2 ** attempt)`
 
 Example with `retry_backoff_factor=1.0`:
 - 1st retry: wait 1 second
-- 2nd retry: wait 2 seconds  
+- 2nd retry: wait 2 seconds
 - 3rd retry: wait 4 seconds
 
 ### Retry Headers
@@ -323,7 +323,7 @@ except HTTPError as e:
 # For real-time APIs
 client = AsyncHTTPClient(url, token, timeout=10.0)
 
-# For batch/report APIs  
+# For batch/report APIs
 client = AsyncHTTPClient(url, token, timeout=300.0)
 ```
 
@@ -360,7 +360,7 @@ async def test_api_call():
         mock_response.status_code = 200
         mock_response.json.return_value = {"result": "success"}
         mock_client.return_value.request.return_value = mock_response
-        
+
         async with AsyncHTTPClient("https://api.test", "token") as client:
             result = await client.get("/test")
             assert result == {"result": "success"}
@@ -373,7 +373,7 @@ async def test_api_call():
 ```python
 # Old (requests)
 import requests
-response = requests.get("https://api.example.com/data", 
+response = requests.get("https://api.example.com/data",
                        headers={"Authorization": "Bearer token"})
 data = response.json()
 
